@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "pnpm -r --parallel dev",
+    "mobile": "pnpm --filter mobile dev",
+    "web": "pnpm --filter web dev",
+    "functions:serve": "pnpm --filter functions serve"
+  }
+}

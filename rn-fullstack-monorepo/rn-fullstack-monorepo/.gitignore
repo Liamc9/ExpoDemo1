@@ -1,0 +1,12 @@
+node_modules
+.pnpm-store
+dist
+lib
+.expo
+.expo-shared
+.vite
+coverage
+*.log
+.env
+.env.*
+apps/*/.env.local
