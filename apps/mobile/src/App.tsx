@@ -1,103 +1,159 @@
-import { StatusBar } from "expo-status-bar";
-import {
-  View,
-  Text,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  FlatList,
-} from "react-native";
-import { useEffect, useState } from "react";
-import { addNote, getNotes, clearNotes, type Note } from "./notes";
+import "react-native-gesture-handler";
+import { NavigationContainer } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
+import { Pressable, Platform, View, ActivityIndicator } from "react-native";
 
-export default function App() {
-  const [count, setCount] = useState(0);
-  const [text, setText] = useState("");
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [loading, setLoading] = useState(true);
+import HomeScreen from "./screens/HomeScreen";
+import SettingsScreen from "./screens/SettingsScreen";
+import ProfileScreen from "./screens/ProfileScreen";
+import ChatsListScreen from "./screens/ChatsListScreen";
+import ChatScreen from "./screens/ChatScreen";
+import SearchScreen from "./screens/SearchScreen";
+import FirebaseTestScreen from "./screens/FirebaseTestScreen";
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      setNotes(await getNotes());
-      setLoading(false);
-    })();
-  }, []);
+import { AuthProvider, useAuth } from "./auth/AuthProvider";
+import SignInScreen from "./screens/SignInScreen";
+import SignUpScreen from "./screens/SignUpScreen";
 
-  async function onAdd() {
-    if (!text.trim()) return;
-    const next = await addNote(text.trim());
-    setNotes(next);
-    setText("");
-  }
+type RootStackParamList = { Main: undefined; Profile: undefined };
+type ChatsStackParamList = {
+  ChatsList: undefined;
+  Chat: { chatId: string; title: string };
+};
+type AuthStackParamList = { SignIn: undefined; SignUp: undefined };
 
+const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
+const ChatsStack = createNativeStackNavigator<ChatsStackParamList>();
+const AuthStack = createNativeStackNavigator<AuthStackParamList>();
+
+function ChatsStackNavigator() {
   return (
-    <View style={s.container}>
-      <Text style={s.title}>Expo Mobile ✅</Text>
-
-      <Pressable style={s.btn} onPress={() => setCount((c) => c + 1)}>
-        <Text>Count: {count}</Text>
-      </Pressable>
-
-      <View style={{ height: 12 }} />
-
-      <TextInput
-        placeholder="Write a note..."
-        value={text}
-        onChangeText={setText}
-        style={s.input}
-        autoCapitalize="sentences"
+    <ChatsStack.Navigator>
+      <ChatsStack.Screen
+        name="ChatsList"
+        component={ChatsListScreen}
+        options={{ title: "Chats" }}
       />
-
-      <View style={s.row}>
-        <Pressable style={s.btn} onPress={onAdd}>
-          <Text>Add Note</Text>
-        </Pressable>
-        <Pressable
-          style={s.btn}
-          onPress={async () => {
-            await clearNotes();
-            setNotes([]);
-          }}
-        >
-          <Text>Clear</Text>
-        </Pressable>
-        <Pressable
-          style={s.btn}
-          onPress={async () => setNotes(await getNotes())}
-        >
-          <Text>{loading ? "Loading..." : "Refresh"}</Text>
-        </Pressable>
-      </View>
-
-      <FlatList
-        style={{ marginTop: 12, width: "100%" }}
-        data={notes}
-        keyExtractor={(n) => n.id}
-        renderItem={({ item }) => <Text style={s.note}>• {item.text}</Text>}
-        ListEmptyComponent={!loading ? <Text>No notes yet</Text> : null}
+      <ChatsStack.Screen
+        name="Chat"
+        component={ChatScreen}
+        options={({ route }) => ({ title: route.params.title })}
       />
-
-      <StatusBar style="auto" />
-    </View>
+    </ChatsStack.Navigator>
   );
 }
 
-const s = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    padding: 16,
-  },
-  title: { fontSize: 22, fontWeight: "700" },
-  btn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-  },
-  input: { width: "100%", borderWidth: 1, borderRadius: 10, padding: 10 },
-  row: { flexDirection: "row", gap: 8 },
-});
+function MainTabs() {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: "tomato",
+        tabBarInactiveTintColor: "gray",
+        tabBarIcon: ({ color, size, focused }) => {
+          let name: keyof typeof Ionicons.glyphMap = "ellipse-outline";
+          if (route.name === "Home") name = focused ? "home" : "home-outline";
+          if (route.name === "Chats")
+            name = focused ? "chatbubbles" : "chatbubbles-outline";
+          if (route.name === "Settings")
+            name = focused ? "settings" : "settings-outline";
+          if (route.name === "Search")
+            name = focused ? "search" : "search-outline";
+          if (route.name === "FirebaseTest")
+            name = focused ? "flame" : "flame-outline";
+          return <Ionicons name={name} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Chats" component={ChatsStackNavigator} />
+      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Search" component={SearchScreen} />
+      <Tab.Screen
+        name="FirebaseTest"
+        component={FirebaseTestScreen}
+        options={{ title: "Firebase" }}
+      />
+    </Tab.Navigator>
+  );
+}
+
+// --- Auth stack when user is logged out ---
+function AuthStackNavigator() {
+  return (
+    <AuthStack.Navigator>
+      <AuthStack.Screen
+        name="SignIn"
+        component={SignInScreen}
+        options={{ title: "Sign In" }}
+      />
+      <AuthStack.Screen
+        name="SignUp"
+        component={SignUpScreen}
+        options={{ title: "Create Account" }}
+      />
+    </AuthStack.Navigator>
+  );
+}
+
+// --- Gate that decides which stack to show ---
+function InnerNavigator() {
+  const { user, initializing } = useAuth();
+
+  if (initializing) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return <AuthStackNavigator />;
+  }
+
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="Main"
+        component={MainTabs}
+        options={({ navigation }) => ({
+          title: "My App",
+          headerRight: () => (
+            <Pressable
+              onPress={() => navigation.navigate("Profile")}
+              hitSlop={10}
+              style={({ pressed }) => ({
+                opacity: pressed ? 0.6 : 1,
+                paddingHorizontal: 6,
+              })}
+              android_ripple={
+                Platform.OS === "android" ? { borderless: true } : undefined
+              }
+            >
+              <Ionicons name="person-circle-outline" size={24} />
+            </Pressable>
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: "Profile" }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <NavigationContainer>
+        <InnerNavigator />
+      </NavigationContainer>
+    </AuthProvider>
+  );
+}

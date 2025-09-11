@@ -1,29 +1,26 @@
+import { View, Text, Pressable } from "react-native";
 import { useState } from "react";
-import "./App.css";
 
-function App() {
+export default function App() {
   const [count, setCount] = useState(0);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank"></a>
-        <a href="https://react.dev" target="_blank"></a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <View style={{ flex: 1, padding: 24, gap: 16 }}>
+      <Text style={{ fontSize: 24, fontWeight: "600" }}>
+        Hello from Vite + React Native Web 👋
+      </Text>
+
+      <Pressable
+        onPress={() => setCount((c) => c + 1)}
+        style={{
+          paddingVertical: 12,
+          paddingHorizontal: 16,
+          borderRadius: 8,
+          backgroundColor: "#333",
+        }}
+      >
+        <Text style={{ color: "white" }}>Clicked {count} times</Text>
+      </Pressable>
+    </View>
   );
 }
-
-export default App;
