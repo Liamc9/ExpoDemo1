@@ -1,149 +1,129 @@
-import "react-native-gesture-handler";
-import { NavigationContainer } from "@react-navigation/native";
+// App.tsx
+import { NavigationContainer, DefaultTheme } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Platform, View, ActivityIndicator } from "react-native";
 
-import HomeScreen from "./screens/HomeScreen";
-import SettingsScreen from "./screens/SettingsScreen";
-import ProfileScreen from "./screens/ProfileScreen";
-import ChatsListScreen from "./screens/ChatsListScreen";
-import ChatScreen from "./screens/ChatScreen";
-import SearchScreen from "./screens/SearchScreen";
-import FirebaseTestScreen from "./screens/FirebaseTestScreen";
-
-import { AuthProvider, useAuth } from "./auth/AuthProvider";
+import Home from "./screens/Home";
+import CreateShop from "./screens/CreateShop";
+import Seller from "./screens/Seller";
+import Shop from "./screens/Shop";
+import Checkout from "./screens/Checkout";
 import SignInScreen from "./screens/SignInScreen";
 import SignUpScreen from "./screens/SignUpScreen";
+import Profile from "./screens/ProfileScreen";
+import { AuthProvider, useAuth } from "./auth/AuthProvider";
 
-type RootStackParamList = { Main: undefined; Profile: undefined };
-type ChatsStackParamList = {
-  ChatsList: undefined;
-  Chat: { chatId: string; title: string };
+const Tabs = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+/* Light theme (not overriding tab bar) */
+const LightTheme = {
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    background: "#F8FAFC",
+    card: "#FFFFFF",
+    text: "#0B1220",
+    border: "#E5E9F0",
+    primary: "#2563EB",
+  },
 };
-type AuthStackParamList = { SignIn: undefined; SignUp: undefined };
 
-const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator<RootStackParamList>();
-const ChatsStack = createNativeStackNavigator<ChatsStackParamList>();
-const AuthStack = createNativeStackNavigator<AuthStackParamList>();
-
-function ChatsStackNavigator() {
+function TabsNav({ navigation }: any) {
   return (
-    <ChatsStack.Navigator>
-      <ChatsStack.Screen
-        name="ChatsList"
-        component={ChatsListScreen}
-        options={{ title: "Chats" }}
-      />
-      <ChatsStack.Screen
-        name="Chat"
-        component={ChatScreen}
-        options={({ route }) => ({ title: route.params.title })}
-      />
-    </ChatsStack.Navigator>
-  );
-}
-
-function MainTabs() {
-  return (
-    <Tab.Navigator
+    <Tabs.Navigator
       screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: "tomato",
-        tabBarInactiveTintColor: "gray",
-        tabBarIcon: ({ color, size, focused }) => {
-          let name: keyof typeof Ionicons.glyphMap = "ellipse-outline";
-          if (route.name === "Home") name = focused ? "home" : "home-outline";
-          if (route.name === "Chats")
-            name = focused ? "chatbubbles" : "chatbubbles-outline";
-          if (route.name === "Settings")
-            name = focused ? "settings" : "settings-outline";
-          if (route.name === "Search")
-            name = focused ? "search" : "search-outline";
-          if (route.name === "FirebaseTest")
-            name = focused ? "flame" : "flame-outline";
-          return <Ionicons name={name} size={size} color={color} />;
+        headerStyle: { backgroundColor: "#FFFFFF" },
+        headerTitleStyle: { color: "#0B1220", fontWeight: "800" },
+        headerTintColor: "#2563EB",
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Profile")}
+            style={{
+              marginRight: 12,
+              backgroundColor: "#EEF2FF",
+              borderRadius: 999,
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+            }}
+          >
+            <Ionicons name="person" size={16} color="#1F2937" />
+          </TouchableOpacity>
+        ),
+        tabBarIcon: ({ focused, color }) => {
+          let icon: keyof typeof Ionicons.glyphMap = "ellipse";
+          if (route.name === "Home") icon = focused ? "home" : "home-outline";
+          if (route.name === "Seller")
+            icon = focused ? "storefront" : "storefront-outline";
+          return <Ionicons name={icon} size={20} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Chats" component={ChatsStackNavigator} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
-      <Tab.Screen name="Search" component={SearchScreen} />
-      <Tab.Screen
-        name="FirebaseTest"
-        component={FirebaseTestScreen}
-        options={{ title: "Firebase" }}
+      <Tabs.Screen
+        name="Home"
+        component={Home}
+        options={{ title: "Discover" }}
       />
-    </Tab.Navigator>
+      <Tabs.Screen name="Seller" component={Seller} />
+    </Tabs.Navigator>
   );
 }
 
-// --- Auth stack when user is logged out ---
-function AuthStackNavigator() {
-  return (
-    <AuthStack.Navigator>
-      <AuthStack.Screen
-        name="SignIn"
-        component={SignInScreen}
-        options={{ title: "Sign In" }}
-      />
-      <AuthStack.Screen
-        name="SignUp"
-        component={SignUpScreen}
-        options={{ title: "Create Account" }}
-      />
-    </AuthStack.Navigator>
-  );
-}
-
-// --- Gate that decides which stack to show ---
-function InnerNavigator() {
-  const { user, initializing } = useAuth();
-
-  if (initializing) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator />
-      </View>
-    );
-  }
-
-  if (!user) {
-    return <AuthStackNavigator />;
-  }
+function RootNavigator() {
+  const { user } = useAuth();
 
   return (
-    <Stack.Navigator>
-      <Stack.Screen
-        name="Main"
-        component={MainTabs}
-        options={({ navigation }) => ({
-          title: "My App",
-          headerRight: () => (
-            <Pressable
-              onPress={() => navigation.navigate("Profile")}
-              hitSlop={10}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.6 : 1,
-                paddingHorizontal: 6,
-              })}
-              android_ripple={
-                Platform.OS === "android" ? { borderless: true } : undefined
-              }
-            >
-              <Ionicons name="person-circle-outline" size={24} />
-            </Pressable>
-          ),
-        })}
-      />
-      <Stack.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{ title: "Profile" }}
-      />
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: "#FFFFFF" },
+        headerTitleStyle: { color: "#0B1220", fontWeight: "800" },
+        headerTintColor: "#2563EB",
+      }}
+    >
+      {user ? (
+        <>
+          <Stack.Screen
+            name="Root"
+            component={TabsNav}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="CreateShop"
+            component={CreateShop}
+            options={{ title: "Open a shop" }}
+          />
+          <Stack.Screen
+            name="Shop"
+            component={Shop}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="Checkout"
+            component={Checkout}
+            options={{ title: "Checkout" }}
+          />
+          <Stack.Screen
+            name="Profile"
+            component={Profile}
+            options={{ title: "Your profile" }}
+          />
+        </>
+      ) : (
+        <>
+          <Stack.Screen
+            name="SignIn"
+            component={SignInScreen}
+            options={{ headerShown: false }}
+          />
+          <Stack.Screen
+            name="SignUp"
+            component={SignUpScreen}
+            options={{ headerShown: false }}
+          />
+        </>
+      )}
     </Stack.Navigator>
   );
 }
@@ -151,8 +131,8 @@ function InnerNavigator() {
 export default function App() {
   return (
     <AuthProvider>
-      <NavigationContainer>
-        <InnerNavigator />
+      <NavigationContainer theme={LightTheme}>
+        <RootNavigator />
       </NavigationContainer>
     </AuthProvider>
   );

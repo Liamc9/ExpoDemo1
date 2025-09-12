@@ -2,7 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
 import { getFirestore } from "@firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 
@@ -23,3 +23,16 @@ export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
+
+export async function ensureAnonSignIn(): Promise<string> {
+  if (auth.currentUser?.uid) return auth.currentUser.uid;
+  await signInAnonymously(auth);
+  return new Promise((resolve) => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u?.uid) {
+        unsub();
+        resolve(u.uid);
+      }
+    });
+  });
+}
