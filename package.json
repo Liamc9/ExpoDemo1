@@ -1,9 +1,21 @@
 {
-  "private": true,
   "scripts": {
-    "dev": "pnpm -r --parallel dev",
-    "mobile": "pnpm --filter mobile dev",
-    "web": "pnpm --filter web dev",
-    "functions:serve": "pnpm --filter functions serve"
+    "dev": "pnpm -F mobile start",
+    "dev:tunnel": "pnpm -F mobile expo start --tunnel",
+    "dev:client": "pnpm -F mobile start:devclient",
+    "doctor": "pnpm -F mobile expo doctor",
+
+    "login": "pnpm -F mobile eas login",
+    "configure": "pnpm -F mobile eas build:configure",
+
+    "build:ios:dev": "pnpm -F mobile eas build --platform ios --profile development",
+    "build:android:dev": "pnpm -F mobile eas build --platform android --profile development",
+    "build:ios:preview": "pnpm -F mobile eas build --platform ios --profile preview",
+    "build:android:preview": "pnpm -F mobile eas build --platform android --profile preview",
+    "build:ios": "pnpm -F mobile eas build --platform ios --profile production",
+    "build:android": "pnpm -F mobile eas build --platform android --profile production",
+
+    "submit:ios": "pnpm -F mobile eas submit --platform ios --latest",
+    "submit:android": "pnpm -F mobile eas submit --platform android --latest"
   }
 }

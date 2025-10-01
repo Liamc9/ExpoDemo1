@@ -7,32 +7,23 @@ import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBFrHL5ktAM_DkqA5Xs9lSo6CQgtArHurs",
-  authDomain: "expodemo-61d67.firebaseapp.com",
-  projectId: "expodemo-61d67",
-  storageBucket: "expodemo-61d67.firebasestorage.app",
-  messagingSenderId: "239133658843",
-  appId: "1:239133658843:web:2cd39456dd137998e7c6fe",
-  measurementId: "G-BRK0Z3WFHL",
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY!,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN!,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID!,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET!,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID!,
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase and export services
 const app = initializeApp(firebaseConfig);
-export const analytics = getAnalytics(app);
+export const analytics =
+  typeof window !== "undefined" &&
+  typeof (window as any).document !== "undefined"
+    ? getAnalytics(app)
+    : undefined;
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
-
-export async function ensureAnonSignIn(): Promise<string> {
-  if (auth.currentUser?.uid) return auth.currentUser.uid;
-  await signInAnonymously(auth);
-  return new Promise((resolve) => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      if (u?.uid) {
-        unsub();
-        resolve(u.uid);
-      }
-    });
-  });
-}
