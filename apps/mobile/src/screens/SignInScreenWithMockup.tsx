@@ -28,6 +28,13 @@ WebBrowser.maybeCompleteAuthSession();
 
 const { width, height } = Dimensions.get("window");
 
+/** --------- Tweakables --------- **/
+const BG_SHIFT_UP = Math.round(height * 0.08); // move background up a bit
+const BUTTON_BOTTOM_GAP = 32; // extra space from very bottom
+const GRADIENT_COVER_HEIGHT = Math.round(height * 0.55); // how tall the dark bottom is
+const TITLE_TOP_OFFSET = Math.round(height * 0.02); // app name top spacing
+/** ------------------------------ **/
+
 // ---------------- Helpers ----------------
 function randomNonce(len = 64) {
   const chars =
@@ -104,6 +111,7 @@ export default function SignInScreen() {
       <ImageBackground
         source={require("../../assets/BakeryImage.png")}
         style={s.bg}
+        imageStyle={s.bgImage}
         resizeMode="cover"
       >
         <SafeAreaView style={{ flex: 1 }}>
@@ -113,28 +121,29 @@ export default function SignInScreen() {
           </View>
         </SafeAreaView>
 
-        {/* Gradient overlay at bottom */}
+        {/* Darker bottom overlay (absolute), also holds the buttons */}
         <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.95)"]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          locations={[0.2, 1]}
+          colors={["rgba(0,0,0,0)", "rgba(0,0,0,0.85)", "rgba(0,0,0,0.95)"]}
+          locations={[0, 0.45, 1]}
           style={s.gradient}
         >
-          <View style={s.bottomBar}>
-            <Pressable style={s.appleBtn} onPress={signInWithAppleNative}>
-              <Ionicons name="logo-apple" size={22} color="#fff" />
-              <Text style={s.appleTxt}>Continue with Apple</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => promptAsync()}
-              style={s.googleBtn}
-              disabled={!request}
-            >
-              <Ionicons name="logo-google" size={20} color="#000" />
-              <Text style={s.googleTxt}>Continue with Google</Text>
-            </Pressable>
-          </View>
+          <SafeAreaView>
+            <View style={s.bottomBar}>
+              <Pressable style={s.appleBtn} onPress={signInWithAppleNative}>
+                <Ionicons name="logo-apple" size={22} color="#fff" />
+                <Text style={s.appleTxt}>Continue with Apple</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => promptAsync()}
+                style={s.googleBtn}
+                disabled={!request}
+              >
+                <Ionicons name="logo-google" size={20} color="#000" />
+                <Text style={s.googleTxt}>Continue with Google</Text>
+              </Pressable>
+            </View>
+          </SafeAreaView>
         </LinearGradient>
       </ImageBackground>
     </View>
@@ -142,43 +151,62 @@ export default function SignInScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1 },
+  root: { flex: 1, backgroundColor: "#000" },
+
   bg: { flex: 1, width: "100%", height: "100%" },
+  bgImage: {
+    // lift the photo upward a bit so the interesting part sits higher
+    transform: [{ translateY: -BG_SHIFT_UP }],
+  },
 
   topContent: {
     flex: 1,
-    justifyContent: "flex-start",
     alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: height * 0.06, // push content down a little
+    paddingHorizontal: 24,
+    paddingTop: TITLE_TOP_OFFSET,
+    // subtle shadow under text for readability on bright images
   },
+
   appName: {
-    fontSize: 48,
+    fontSize: 44,
     fontWeight: "800",
     color: "#fff",
     textAlign: "center",
+    letterSpacing: 0.5,
+    textShadowColor: "rgba(0,0,0,0.35)",
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 6,
+    marginBottom: 8,
   },
+
   motto: {
-    fontSize: 28,
+    marginTop: 8,
+    fontSize: 18,
     fontWeight: "600",
-    color: "#fff",
+    color: "#ffffffdd",
     textAlign: "center",
-    marginTop: 12,
+    paddingHorizontal: 24,
   },
 
   gradient: {
-    width: "100%",
-    paddingTop: 40, // less top padding so buttons sit higher
-    paddingBottom: 40,
-    paddingHorizontal: 20,
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: GRADIENT_COVER_HEIGHT,
     justifyContent: "flex-end",
   },
+
   bottomBar: {
-    gap: 16,
+    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: BUTTON_BOTTOM_GAP,
   },
+
   googleBtn: {
     height: 54,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: "#E5E7EB",
     backgroundColor: "#fff",
@@ -187,15 +215,16 @@ const s = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
   },
-  googleTxt: { fontSize: 16, fontWeight: "600", color: "#111827" },
+  googleTxt: { fontSize: 16, fontWeight: "700", color: "#111827" },
+
   appleBtn: {
     height: 54,
-    borderRadius: 12,
+    borderRadius: 14,
     backgroundColor: "#000",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 10,
   },
-  appleTxt: { fontSize: 16, fontWeight: "600", color: "#fff" },
+  appleTxt: { fontSize: 16, fontWeight: "700", color: "#fff" },
 });

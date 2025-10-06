@@ -1,27 +1,30 @@
 // screens/ManageAccount.tsx
-import React, { useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Pressable,
-  Alert,
-  Modal,
-  TextInput,
-  SafeAreaView,
-  Platform,
-} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+// #region Imports
 import { Ionicons } from "@expo/vector-icons";
-import { auth } from "../firebase-config";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useMemo, useState } from "react";
+
 import {
+  deleteUser,
   EmailAuthProvider,
   reauthenticateWithCredential,
-  deleteUser,
 } from "firebase/auth";
+import {
+  Alert,
+  Modal,
+  Platform,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { auth } from "../firebase-config";
 // If you have a sign-out helper:
 // import { useAuth } from "../auth/AuthProvider";
+// #endregion
 
 const THEME = {
   bg: "#F6F7F9",

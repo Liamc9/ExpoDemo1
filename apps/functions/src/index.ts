@@ -4,17 +4,23 @@ import { defineSecret } from "firebase-functions/params";
 import Stripe from "stripe";
 import corsLib from "cors";
 
-/** Secrets */
+/** ─────────────────────────────────────────────────────────────
+ *  Secrets
+ *  Set once via: firebase functions:secrets:set STRIPE_SECRET_KEY
+ *  ──────────────────────────────────────────────────────────── */
 const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
 
-/** CORS (allow all origins; lock down later if needed) */
+/** ─────────────────────────────────────────────────────────────
+ *  CORS (wide open for dev; restrict origins in prod)
+ *  ──────────────────────────────────────────────────────────── */
 const cors = corsLib({ origin: true });
 
-/** Helper: init Stripe once per request (apiVersion pinned for types) */
+/** ─────────────────────────────────────────────────────────────
+ *  Helpers
+ *  ──────────────────────────────────────────────────────────── */
 const getStripe = (sk: string) =>
   new Stripe(sk, { apiVersion: "2024-06-20" as any });
 
-/** Helper: ensure POST requests */
 function ensurePost(req: any, res: any) {
   if (req.method !== "POST") {
     res.status(405).json({ error: "Method not allowed" });
@@ -24,7 +30,9 @@ function ensurePost(req: any, res: any) {
 }
 
 /* ──────────────────────────────────────────────────────────────
-   1) Payments — existing (kept)
+   1) Payments — create a PaymentIntent
+   Body: { amount: number, currency?: string, metadata?: object }
+   Returns: { clientSecret }
    ────────────────────────────────────────────────────────────── */
 export const createPaymentIntent = onRequest(
   { region: "europe-west2", secrets: [STRIPE_SECRET_KEY] },
@@ -48,10 +56,10 @@ export const createPaymentIntent = onRequest(
             metadata,
           });
 
-          res.json({ clientSecret: pi.client_secret });
+          res.status(200).json({ clientSecret: pi.client_secret });
           resolve();
         } catch (e: any) {
-          console.error(e);
+          console.error("createPaymentIntent error:", e);
           res.status(500).json({ error: e?.message ?? "Server error" });
           resolve();
         }
@@ -60,83 +68,90 @@ export const createPaymentIntent = onRequest(
 );
 
 /* ──────────────────────────────────────────────────────────────
-   2) Identity — start a Stripe Identity Verification Session
-      Returns { clientSecret, id }
+   2) Identity — create a Stripe Identity Verification Session
+      Body: { metadata?: object, requireSelfie?: boolean, return_url?: string }
+      NOTE: return_url is OPTIONAL. If provided, must be https://
+      Returns: { url, id }
    ────────────────────────────────────────────────────────────── */
-// functions/src/index.ts (add/replace these two handlers)
 export const createIdentitySession = onRequest(
   { region: "europe-west2", secrets: [STRIPE_SECRET_KEY] },
   async (req, res) =>
     new Promise<void>((resolve) => {
       cors(req, res, async () => {
         try {
-          if (req.method !== "POST") {
-            res.status(405).json({ error: "Method not allowed" });
-            return resolve();
-          }
+          if (!ensurePost(req, res)) return resolve();
+
           const { metadata, requireSelfie = true, return_url } = req.body ?? {};
-          if (!return_url) {
-            res.status(400).json({ error: "return_url is required" });
-            return resolve();
-          }
+          const stripe = getStripe(STRIPE_SECRET_KEY.value());
 
-          const stripe = new Stripe(STRIPE_SECRET_KEY.value(), {
-            apiVersion: "2024-06-20" as any,
-          });
-
-          const session = await stripe.identity.verificationSessions.create({
+          // Build args; include return_url ONLY if present and non-empty.
+          const createArgs: Stripe.Identity.VerificationSessionCreateParams = {
             type: "document",
             metadata,
-            return_url, // hosted flow returns here when finished/cancelled
             options: { document: { require_matching_selfie: !!requireSelfie } },
-          });
+          };
+          if (typeof return_url === "string" && return_url.length > 0) {
+            // Stripe requires return_url to be https:// if provided
+            createArgs.return_url = return_url;
+          }
 
-          // Use session.url for hosted flow (and keep id for polling)
-          res.json({ url: session.url, id: session.id });
+          const session = await stripe.identity.verificationSessions.create(
+            createArgs
+          );
+
+          res.status(200).json({ url: session.url, id: session.id });
           resolve();
         } catch (e: any) {
-          console.error(e);
+          // Surface basic detail for easier debugging in dev (don’t over-share in prod)
+          const detail = {
+            message: e?.message,
+            type: e?.type,
+            code: e?.code,
+            param: e?.param,
+          };
+          console.error("createIdentitySession error:", detail, e);
           res
             .status(400)
-            .json({ error: e?.message ?? "Failed to create identity session" });
+            .json({ error: "Failed to create identity session", detail });
           resolve();
         }
       });
     })
 );
 
+/* ──────────────────────────────────────────────────────────────
+   3) Identity — retrieve status
+      Body: { sessionId: string }
+      Returns: { status, verifiedOutputs? }
+      status ∈ "requires_input" | "processing" | "verified" | "canceled"
+   ────────────────────────────────────────────────────────────── */
 export const getIdentityStatus = onRequest(
   { region: "europe-west2", secrets: [STRIPE_SECRET_KEY] },
   async (req, res) =>
     new Promise<void>((resolve) => {
       cors(req, res, async () => {
         try {
-          if (req.method !== "POST") {
-            res.status(405).json({ error: "Method not allowed" });
-            return resolve();
-          }
+          if (!ensurePost(req, res)) return resolve();
+
           const { sessionId } = req.body ?? {};
-          if (!sessionId) {
+          if (!sessionId || typeof sessionId !== "string") {
             res.status(400).json({ error: "sessionId is required" });
             return resolve();
           }
-          const stripe = new Stripe(STRIPE_SECRET_KEY.value(), {
-            apiVersion: "2024-06-20" as any,
-          });
+
+          const stripe = getStripe(STRIPE_SECRET_KEY.value());
           const s = await stripe.identity.verificationSessions.retrieve(
             sessionId,
-            {
-              expand: ["verified_outputs"],
-            }
+            { expand: ["verified_outputs"] }
           );
-          // status: "requires_input" | "processing" | "verified" | "canceled"
-          res.json({
+
+          res.status(200).json({
             status: s.status,
             verifiedOutputs: s.verified_outputs ?? null,
           });
           resolve();
         } catch (e: any) {
-          console.error(e);
+          console.error("getIdentityStatus error:", e);
           res
             .status(400)
             .json({ error: e?.message ?? "Failed to fetch identity status" });
@@ -147,9 +162,9 @@ export const getIdentityStatus = onRequest(
 );
 
 /* ──────────────────────────────────────────────────────────────
-   3) Connect — create an Express onboarding link
-      Body: { return_url, refresh_url, email?, country? }
-      Returns { url, accountId }
+   4) Connect — create an Express onboarding link
+      Body: { return_url: string, refresh_url: string, email?: string, country?: string }
+      Returns: { url, accountId }
    ────────────────────────────────────────────────────────────── */
 export const createConnectOnboardingLink = onRequest(
   { region: "europe-west2", secrets: [STRIPE_SECRET_KEY] },
@@ -162,8 +177,8 @@ export const createConnectOnboardingLink = onRequest(
           const {
             return_url,
             refresh_url,
-            email, // optional: if you have user email, pass it
-            country, // optional: default GB
+            email, // optional
+            country, // optional, default "GB"
           } = req.body ?? {};
 
           if (!return_url || !refresh_url) {
@@ -175,9 +190,7 @@ export const createConnectOnboardingLink = onRequest(
 
           const stripe = getStripe(STRIPE_SECRET_KEY.value());
 
-          // In production, you should:
-          // 1) Look up a previously created account for the current user
-          // 2) If none, create it and store the account.id against the user in Firestore
+          // In production, look up or create an account and store it against your user.
           const account = await stripe.accounts.create({
             type: "express",
             country: (country || "GB").toUpperCase(),
@@ -195,10 +208,10 @@ export const createConnectOnboardingLink = onRequest(
             refresh_url,
           });
 
-          res.json({ url: link.url, accountId: account.id });
+          res.status(200).json({ url: link.url, accountId: account.id });
           resolve();
         } catch (e: any) {
-          console.error(e);
+          console.error("createConnectOnboardingLink error:", e);
           res
             .status(400)
             .json({ error: e?.message ?? "Failed to create onboarding link" });
@@ -207,3 +220,15 @@ export const createConnectOnboardingLink = onRequest(
       });
     })
 );
+
+/* ──────────────────────────────────────────────────────────────
+   (Optional) Webhook stub for production:
+   - Add a Stripe webhook endpoint in Dashboard for events like:
+     identity.verification_session.verified
+     identity.verification_session.requires_input
+     identity.verification_session.canceled
+   - For signature verification, you must use the raw request body.
+   - With Firebase v2 onRequest, configure an endpoint that bypasses
+     body parsing and verify via stripe.webhooks.constructEvent().
+   - Omitted here for brevity; add when you’re ready.
+   ────────────────────────────────────────────────────────────── */
