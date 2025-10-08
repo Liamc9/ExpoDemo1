@@ -1,15 +1,5 @@
 import React, { useEffect } from "react";
-import {
-  View,
-  Text,
-  ImageBackground,
-  StyleSheet,
-  Pressable,
-  Dimensions,
-  Alert,
-  SafeAreaView,
-  Platform,
-} from "react-native";
+import { View, Text, ImageBackground, StyleSheet, Pressable, Dimensions, Alert, SafeAreaView, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as WebBrowser from "expo-web-browser";
 import * as Google from "expo-auth-session/providers/google";
@@ -17,11 +7,7 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import * as Crypto from "expo-crypto";
 import Constants from "expo-constants";
 import { LinearGradient } from "expo-linear-gradient";
-import {
-  OAuthProvider,
-  signInWithCredential,
-  GoogleAuthProvider,
-} from "firebase/auth";
+import { OAuthProvider, signInWithCredential, GoogleAuthProvider } from "firebase/auth";
 import { auth } from "../firebase-config";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -30,11 +16,9 @@ const { width, height } = Dimensions.get("window");
 
 // ---------------- Helpers ----------------
 function randomNonce(len = 64) {
-  const chars =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let s = "";
-  for (let i = 0; i < len; i++)
-    s += chars[Math.floor(Math.random() * chars.length)];
+  for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
   return s;
 }
 async function sha256Hex(s: string) {
@@ -45,10 +29,7 @@ async function sha256Hex(s: string) {
 async function signInWithAppleNative() {
   const isExpoGo = Constants.appOwnership === "expo";
   if (isExpoGo && Platform.OS !== "ios") {
-    Alert.alert(
-      "Use web flow in Expo Go",
-      "Native Apple tokens in Expo Go have the wrong audience. Test Apple natively on TestFlight, or use your web OAuth flow in Expo Go."
-    );
+    Alert.alert("Use web flow in Expo Go", "Native Apple tokens in Expo Go have the wrong audience. Test Apple natively on TestFlight, or use your web OAuth flow in Expo Go.");
     return;
   }
 
@@ -56,18 +37,12 @@ async function signInWithAppleNative() {
   const hashedNonce = await sha256Hex(rawNonce);
 
   const credential = await AppleAuthentication.signInAsync({
-    requestedScopes: [
-      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-      AppleAuthentication.AppleAuthenticationScope.EMAIL,
-    ],
+    requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
     nonce: hashedNonce,
   });
 
   if (!credential.identityToken) {
-    Alert.alert(
-      "Apple Sign-In failed",
-      "No identity token returned. Ensure your App ID has the 'Sign in with Apple' capability, then rebuild."
-    );
+    Alert.alert("Apple Sign-In failed", "No identity token returned. Ensure your App ID has the 'Sign in with Apple' capability, then rebuild.");
     return;
   }
 
@@ -101,11 +76,7 @@ export default function SignInScreen() {
 
   return (
     <View style={s.root}>
-      <ImageBackground
-        source={require("../../assets/BakeryImage.png")}
-        style={s.bg}
-        resizeMode="cover"
-      >
+      <ImageBackground source={require("../../assets/BakeryImage.png")} style={s.bg} resizeMode="cover">
         <SafeAreaView style={{ flex: 1 }}>
           <View style={s.topContent}>
             <Text style={s.appName}>Basil</Text>
@@ -114,23 +85,13 @@ export default function SignInScreen() {
         </SafeAreaView>
 
         {/* Gradient overlay at bottom */}
-        <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.95)"]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          locations={[0.2, 1]}
-          style={s.gradient}
-        >
+        <LinearGradient colors={["transparent", "rgba(0,0,0,0.95)"]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} locations={[0.2, 1]} style={s.gradient}>
           <View style={s.bottomBar}>
             <Pressable style={s.appleBtn} onPress={signInWithAppleNative}>
               <Ionicons name="logo-apple" size={22} color="#fff" />
               <Text style={s.appleTxt}>Continue with Apple</Text>
             </Pressable>
-            <Pressable
-              onPress={() => promptAsync()}
-              style={s.googleBtn}
-              disabled={!request}
-            >
+            <Pressable onPress={() => promptAsync()} style={s.googleBtn} disabled={!request}>
               <Ionicons name="logo-google" size={20} color="#000" />
               <Text style={s.googleTxt}>Continue with Google</Text>
             </Pressable>

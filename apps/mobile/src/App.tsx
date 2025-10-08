@@ -1,4 +1,4 @@
-// App.tsx
+import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
@@ -23,21 +23,31 @@ import ConnectBank from "./screens/ConnectBank";
 import Orders from "./screens/Orders";
 import OrderDetail from "./screens/OrderDetail";
 
-import { AuthProvider, useAuth } from "./auth/AuthProvider";
+import { AuthProvider, useAuth } from "./providers/AuthProvider";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ThemeProvider } from "./providers/ThemeProvider";
+import StripeAppProvider from "./providers/StripeProvider";
 
 const Tabs = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-// Shared header/tab styling
 const HEADER_OPTIONS = {
   headerStyle: { backgroundColor: colors.card },
   headerTitleStyle: { color: colors.text, fontWeight: "800" as const },
   headerTintColor: colors.primary,
 };
+
 const TAB_OPTIONS = {
   tabBarActiveTintColor: colors.text,
   tabBarInactiveTintColor: "#94A3B8",
   tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
+};
+
+const nameMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+  Home: "home-outline",
+  Orders: "receipt-outline",
+  Seller: "storefront-outline",
+  More: "ellipsis-horizontal",
 };
 
 function TabsNav({ navigation }: any) {
@@ -62,32 +72,16 @@ function TabsNav({ navigation }: any) {
           </TouchableOpacity>
         ),
         tabBarIcon: ({ focused, color }) => {
-          const nameMap: Record<string, keyof typeof Ionicons.glyphMap> = {
-            Home: focused ? "home" : "home-outline",
-            Orders: focused ? "receipt" : "receipt-outline",
-            Seller: focused ? "storefront" : "storefront-outline",
-            More: "ellipsis-horizontal",
-          };
-          return (
-            <Ionicons
-              name={nameMap[route.name] ?? "ellipse"}
-              size={20}
-              color={color}
-            />
-          );
+          let iconName = nameMap[route.name] || "ellipse";
+          if (route.name === "Home" && focused) iconName = "home";
+          if (route.name === "Orders" && focused) iconName = "receipt";
+          if (route.name === "Seller" && focused) iconName = "storefront";
+          return <Ionicons name={iconName} size={20} color={color} />;
         },
       })}
     >
-      <Tabs.Screen
-        name="Home"
-        component={Home}
-        options={{ title: "Discover" }}
-      />
-      <Tabs.Screen
-        name="Orders"
-        component={Orders}
-        options={{ title: "Orders" }}
-      />
+      <Tabs.Screen name="Home" component={Home} options={{ title: "Discover" }} />
+      <Tabs.Screen name="Orders" component={Orders} options={{ title: "Orders" }} />
       <Tabs.Screen name="Seller" component={Seller} />
       <Tabs.Screen name="More" component={More} />
     </Tabs.Navigator>
@@ -101,47 +95,21 @@ function RootNavigator() {
     <Stack.Navigator screenOptions={HEADER_OPTIONS}>
       {user ? (
         <>
-          <Stack.Screen
-            name="Root"
-            component={TabsNav}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Shop"
-            component={Shop}
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name="Checkout"
-            component={Checkout}
-            options={{ title: "Checkout" }}
-          />
-          <Stack.Screen
-            name="Profile"
-            component={Profile}
-            options={{ title: "Your profile" }}
-          />
+          <Stack.Screen name="Root" component={TabsNav} options={{ headerShown: false }} />
+          <Stack.Screen name="Shop" component={Shop} options={{ headerShown: false }} />
+          <Stack.Screen name="Checkout" component={Checkout} options={{ title: "Checkout" }} />
+          <Stack.Screen name="Profile" component={Profile} options={{ title: "Your profile" }} />
           <Stack.Screen name="HelpAndSupport" component={HelpAndSupport} />
           <Stack.Screen name="ContactSupport" component={ContactSupport} />
           <Stack.Screen name="OrderDetail" component={OrderDetail} />
           <Stack.Screen name="ManageAccount" component={ManageAccount} />
-          <Stack.Screen
-            name="ManagePreferences"
-            component={ManagePreferences}
-          />
-          <Stack.Screen
-            name="CreateShopDetails"
-            component={CreateShopDetails}
-          />
+          <Stack.Screen name="ManagePreferences" component={ManagePreferences} />
+          <Stack.Screen name="CreateShopDetails" component={CreateShopDetails} />
           <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} />
           <Stack.Screen name="ConnectBank" component={ConnectBank} />
         </>
       ) : (
-        <Stack.Screen
-          name="SignIn"
-          component={SignInScreen}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />
       )}
     </Stack.Navigator>
   );
@@ -149,10 +117,16 @@ function RootNavigator() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <NavigationContainer>
-        <RootNavigator />
-      </NavigationContainer>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <StripeAppProvider>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+          </StripeAppProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
