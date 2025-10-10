@@ -22,6 +22,11 @@ import VerifyIdentity from "./screens/VerifyIdentity";
 import ConnectBank from "./screens/ConnectBank";
 import Orders from "./screens/Orders";
 import OrderDetail from "./screens/OrderDetail";
+import DevMenu from "./screens/DevMenu";
+import GameScreen from "./screens/GameScreen";
+import WordleScreen from "./screens/WordleScreen";
+import ThreeRunnerScreen from "./screens/ThreeRunnerScreen";
+import WaterSortScreen from "./screens/WaterSortScreen";
 
 import { AuthProvider, useAuth } from "./providers/AuthProvider";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -84,6 +89,7 @@ function TabsNav({ navigation }: any) {
       <Tabs.Screen name="Orders" component={Orders} options={{ title: "Orders" }} />
       <Tabs.Screen name="Seller" component={Seller} />
       <Tabs.Screen name="More" component={More} />
+      <Tabs.Screen name="Dev" component={DevMenu} />
     </Tabs.Navigator>
   );
 }
@@ -107,6 +113,11 @@ function RootNavigator() {
           <Stack.Screen name="CreateShopDetails" component={CreateShopDetails} />
           <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} />
           <Stack.Screen name="ConnectBank" component={ConnectBank} />
+          <Stack.Screen name="DevMenu" component={DevMenu} />
+          <Stack.Screen name="GameScreen" component={GameScreen} options={{ title: "Game Demo" }} />
+          <Stack.Screen name="WordleScreen" component={WordleScreen} options={{ title: "Wordle Demo" }} />
+          <Stack.Screen name="ThreeRunnerScreen" component={ThreeRunnerScreen} options={{ title: "3D Runner Demo" }} />
+          <Stack.Screen name="WaterSortScreen" component={WaterSortScreen} options={{ title: "Water Sort Demo" }} />
         </>
       ) : (
         <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />
