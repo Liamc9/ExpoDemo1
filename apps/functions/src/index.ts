@@ -36,3 +36,5 @@ export const { createPaymentIntent, createIdentitySession, getIdentityStatus, cr
 // In future you can add other categories similarly:
 // const auth = makeAuthHandlers({ onRequest, cors, ... });
 // export const { signIn, signOut } = auth;
+
+export { rapidApiCall } from "./rapidApi";

@@ -27,6 +27,13 @@ import GameScreen from "./screens/GameScreen";
 import WordleScreen from "./screens/WordleScreen";
 import ThreeRunnerScreen from "./screens/ThreeRunnerScreen";
 import WaterSortScreen from "./screens/WaterSortScreen";
+import Overview from "./screens/Overview";
+import Transactions from "./screens/Transactions";
+import Assets from "./screens/Assets";
+import Liabilities from "./screens/Liabilities";
+import Goals from "./screens/Goals";
+import IncomeExpenses from "./screens/IncomeExpenses";
+import QuoteScreen from "./screens/QuoteScreen";
 
 import { AuthProvider, useAuth } from "./providers/AuthProvider";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -118,6 +125,13 @@ function RootNavigator() {
           <Stack.Screen name="WordleScreen" component={WordleScreen} options={{ title: "Wordle Demo" }} />
           <Stack.Screen name="ThreeRunnerScreen" component={ThreeRunnerScreen} options={{ title: "3D Runner Demo" }} />
           <Stack.Screen name="WaterSortScreen" component={WaterSortScreen} options={{ title: "Water Sort Demo" }} />
+          <Stack.Screen name="Overview" component={Overview} />
+          <Stack.Screen name="Transactions" component={Transactions} />
+          <Stack.Screen name="Assets" component={Assets} />
+          <Stack.Screen name="Liabilities" component={Liabilities} />
+          <Stack.Screen name="Goals" component={Goals} />
+          <Stack.Screen name="IncomeExpenses" component={IncomeExpenses} />
+          <Stack.Screen name="QuoteScreen" component={QuoteScreen} options={{ title: "Inspiring Quote" }} />
         </>
       ) : (
         <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />

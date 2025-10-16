@@ -1,4 +1,4 @@
-// theme/ThemeProvider.tsx
+// src/providers/ThemeProvider.tsx
 import React, { createContext, useContext, useMemo } from "react";
 
 // --- Define your theme colors here ---

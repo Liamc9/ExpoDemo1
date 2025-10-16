@@ -1,3 +1,4 @@
+// src/providers/AuthProvider.tsx
 import React, { createContext, useContext, useEffect, useMemo, useState, PropsWithChildren } from "react";
 import { onAuthStateChanged, signInWithCredential, GoogleAuthProvider, OAuthProvider, User, signOut } from "firebase/auth";
 import { auth } from "../firebase-config";

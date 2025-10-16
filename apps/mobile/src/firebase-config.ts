@@ -18,11 +18,7 @@ const firebaseConfig = {
 
 // Initialize Firebase and export services
 const app = initializeApp(firebaseConfig);
-export const analytics =
-  typeof window !== "undefined" &&
-  typeof (window as any).document !== "undefined"
-    ? getAnalytics(app)
-    : undefined;
+export const analytics = typeof window !== "undefined" && typeof (window as any).document !== "undefined" ? getAnalytics(app) : undefined;
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);

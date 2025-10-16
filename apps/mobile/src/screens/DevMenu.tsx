@@ -7,7 +7,7 @@ import { colors } from "../theme"; // optional — use your theme if you have on
 export default function DevMenu() {
   const navigation = useNavigation<any>();
 
-  const screens = ["Home", "Shop", "Checkout", "Seller", "SignInScreen", "ProfileScreen", "More", "HelpAndSupport", "ContactSupport", "ManageAccount", "ManagePreferences", "CreateShopDetails", "VerifyIdentity", "ConnectBank", "GameScreen", "Orders", "OrderDetail", "WordleScreen", "ThreeRunnerScreen", "WaterSortScreen"];
+  const screens = ["Home", "Shop", "Checkout", "Seller", "SignInScreen", "ProfileScreen", "More", "HelpAndSupport", "ContactSupport", "ManageAccount", "ManagePreferences", "CreateShopDetails", "VerifyIdentity", "ConnectBank", "GameScreen", "Orders", "OrderDetail", "WordleScreen", "ThreeRunnerScreen", "WaterSortScreen", "Overview", "Transactions", "Assets", "Liabilities", "Goals", "IncomeExpenses", "QuoteScreen"];
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
