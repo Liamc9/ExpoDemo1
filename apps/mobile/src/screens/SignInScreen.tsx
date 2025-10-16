@@ -1,50 +1,162 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, Alert } from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useAuth } from "../auth/AuthProvider";
+import React, { useEffect } from "react";
+import { View, Text, ImageBackground, StyleSheet, Pressable, Dimensions, Alert, SafeAreaView, Platform } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import * as WebBrowser from "expo-web-browser";
+import * as Google from "expo-auth-session/providers/google";
+import * as AppleAuthentication from "expo-apple-authentication";
+import * as Crypto from "expo-crypto";
+import Constants from "expo-constants";
+import { LinearGradient } from "expo-linear-gradient";
+import { OAuthProvider, signInWithCredential, GoogleAuthProvider } from "firebase/auth";
+import { auth } from "../firebase-config";
 
-type Props = NativeStackScreenProps<any, "SignIn">;
+WebBrowser.maybeCompleteAuthSession();
 
-export default function SignInScreen({ navigation }: Props) {
-  const { signIn, resetPassword } = useAuth();
-  const [email, setEmail] = useState("");
-  const [pw, setPw] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
+const { width, height } = Dimensions.get("window");
 
-  const submit = async () => {
-    setErr(null);
-    if (!email || !pw) return setErr("Enter email and password.");
-    setLoading(true);
-    try { await signIn(email, pw); } 
-    catch (e: any) { setErr(e?.message ?? "Sign in failed"); }
-    finally { setLoading(false); }
-  };
+// ---------------- Helpers ----------------
+function randomNonce(len = 64) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let s = "";
+  for (let i = 0; i < len; i++) s += chars[Math.floor(Math.random() * chars.length)];
+  return s;
+}
+async function sha256Hex(s: string) {
+  return await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, s);
+}
 
-  const forgot = async () => {
-    if (!email) return Alert.alert("Enter your email first");
-    try { await resetPassword(email); Alert.alert("Check your inbox for a reset link"); }
-    catch (e: any) { Alert.alert("Error", e?.message ?? "Could not send reset email"); }
-  };
+// ---------------- Apple ----------------
+async function signInWithAppleNative() {
+  const isExpoGo = Constants.appOwnership === "expo";
+  if (isExpoGo && Platform.OS !== "ios") {
+    Alert.alert("Use web flow in Expo Go", "Native Apple tokens in Expo Go have the wrong audience. Test Apple natively on TestFlight, or use your web OAuth flow in Expo Go.");
+    return;
+  }
+
+  const rawNonce = randomNonce(64);
+  const hashedNonce = await sha256Hex(rawNonce);
+
+  const credential = await AppleAuthentication.signInAsync({
+    requestedScopes: [AppleAuthentication.AppleAuthenticationScope.FULL_NAME, AppleAuthentication.AppleAuthenticationScope.EMAIL],
+    nonce: hashedNonce,
+  });
+
+  if (!credential.identityToken) {
+    Alert.alert("Apple Sign-In failed", "No identity token returned. Ensure your App ID has the 'Sign in with Apple' capability, then rebuild.");
+    return;
+  }
+
+  const provider = new OAuthProvider("apple.com");
+  const fbCred = provider.credential({
+    idToken: credential.identityToken,
+    rawNonce,
+  });
+
+  await signInWithCredential(auth, fbCred);
+}
+
+export default function SignInScreen() {
+  const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
+    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID!,
+    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID!,
+    webClientId: process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID!,
+  });
+
+  useEffect(() => {
+    if (response?.type === "success") {
+      // @ts-ignore
+      const { id_token } = response.params || {};
+      if (!id_token) return;
+      const cred = GoogleAuthProvider.credential(id_token);
+      signInWithCredential(auth, cred).catch((err) => {
+        Alert.alert("Google Sign-In failed", err?.message ?? String(err));
+      });
+    }
+  }, [response]);
 
   return (
-    <View style={s.container}>
-      <Text style={s.title}>Sign in</Text>
-      <TextInput style={s.input} autoCapitalize="none" placeholder="you@example.com" value={email} onChangeText={setEmail} />
-      <TextInput style={s.input} secureTextEntry placeholder="••••••••" value={pw} onChangeText={setPw} />
-      {err ? <Text style={s.err}>{err}</Text> : null}
-      <Pressable onPress={submit} style={s.btn}><Text style={s.btnTxt}>{loading ? "Signing in..." : "Sign In"}</Text></Pressable>
-      <Pressable onPress={() => navigation.navigate("SignUp")} style={{ marginTop: 12 }}><Text>Create an account</Text></Pressable>
-      <Pressable onPress={forgot} style={{ marginTop: 8 }}><Text>Forgot password?</Text></Pressable>
+    <View style={s.root}>
+      <ImageBackground source={require("../../assets/BakeryImage.png")} style={s.bg} resizeMode="cover">
+        <SafeAreaView style={{ flex: 1 }}>
+          <View style={s.topContent}>
+            <Text style={s.appName}>Basil</Text>
+            <Text style={s.motto}>Sell From Your Home</Text>
+          </View>
+        </SafeAreaView>
+
+        {/* Gradient overlay at bottom */}
+        <LinearGradient colors={["transparent", "rgba(0,0,0,0.95)"]} start={{ x: 0.5, y: 0 }} end={{ x: 0.5, y: 1 }} locations={[0.2, 1]} style={s.gradient}>
+          <View style={s.bottomBar}>
+            <Pressable style={s.appleBtn} onPress={signInWithAppleNative}>
+              <Ionicons name="logo-apple" size={22} color="#fff" />
+              <Text style={s.appleTxt}>Continue with Apple</Text>
+            </Pressable>
+            <Pressable onPress={() => promptAsync()} style={s.googleBtn} disabled={!request}>
+              <Ionicons name="logo-google" size={20} color="#000" />
+              <Text style={s.googleTxt}>Continue with Google</Text>
+            </Pressable>
+          </View>
+        </LinearGradient>
+      </ImageBackground>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, padding: 24, justifyContent: "center" },
-  title: { fontSize: 24, marginBottom: 16, fontWeight: "700" },
-  input: { borderWidth: 1, borderColor: "#ddd", padding: 12, borderRadius: 10, marginBottom: 12 },
-  btn: { backgroundColor: "#ff6a00", padding: 14, borderRadius: 12, alignItems: "center" },
-  btnTxt: { color: "#111", fontWeight: "600" },
-  err: { color: "crimson", marginBottom: 8 },
+  root: { flex: 1 },
+  bg: { flex: 1, width: "100%", height: "100%" },
+
+  topContent: {
+    flex: 1,
+    justifyContent: "flex-start",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingTop: height * 0.06, // push content down a little
+  },
+  appName: {
+    fontSize: 48,
+    fontWeight: "800",
+    color: "#fff",
+    textAlign: "center",
+  },
+  motto: {
+    fontSize: 28,
+    fontWeight: "600",
+    color: "#fff",
+    textAlign: "center",
+    marginTop: 12,
+  },
+
+  gradient: {
+    width: "100%",
+    paddingTop: 40, // less top padding so buttons sit higher
+    paddingBottom: 40,
+    paddingHorizontal: 20,
+    justifyContent: "flex-end",
+  },
+  bottomBar: {
+    gap: 16,
+  },
+  googleBtn: {
+    height: 54,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  googleTxt: { fontSize: 16, fontWeight: "600", color: "#111827" },
+  appleBtn: {
+    height: 54,
+    borderRadius: 12,
+    backgroundColor: "#000",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  appleTxt: { fontSize: 16, fontWeight: "600", color: "#fff" },
 });

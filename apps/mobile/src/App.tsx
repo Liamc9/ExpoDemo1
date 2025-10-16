@@ -1,159 +1,157 @@
-import "react-native-gesture-handler";
+import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { Pressable, Platform, View, ActivityIndicator } from "react-native";
+import { colors } from "./theme";
 
-import HomeScreen from "./screens/HomeScreen";
-import SettingsScreen from "./screens/SettingsScreen";
-import ProfileScreen from "./screens/ProfileScreen";
-import ChatsListScreen from "./screens/ChatsListScreen";
-import ChatScreen from "./screens/ChatScreen";
-import SearchScreen from "./screens/SearchScreen";
-import FirebaseTestScreen from "./screens/FirebaseTestScreen";
-
-import { AuthProvider, useAuth } from "./auth/AuthProvider";
+import Home from "./screens/Home";
+import Seller from "./screens/Seller";
+import Shop from "./screens/Shop";
+import Checkout from "./screens/Checkout";
 import SignInScreen from "./screens/SignInScreen";
-import SignUpScreen from "./screens/SignUpScreen";
+import Profile from "./screens/ProfileScreen";
+import More from "./screens/More";
+import HelpAndSupport from "./screens/HelpAndSupport";
+import ContactSupport from "./screens/ContactSupport";
+import ManageAccount from "./screens/ManageAccount";
+import ManagePreferences from "./screens/ManagePreferences";
+import CreateShopDetails from "./screens/CreateShopDetails";
+import VerifyIdentity from "./screens/VerifyIdentity";
+import ConnectBank from "./screens/ConnectBank";
+import Orders from "./screens/Orders";
+import OrderDetail from "./screens/OrderDetail";
+import DevMenu from "./screens/DevMenu";
+import GameScreen from "./screens/GameScreen";
+import WordleScreen from "./screens/WordleScreen";
+import ThreeRunnerScreen from "./screens/ThreeRunnerScreen";
+import WaterSortScreen from "./screens/WaterSortScreen";
+import Overview from "./screens/Overview";
+import Transactions from "./screens/Transactions";
+import Assets from "./screens/Assets";
+import Liabilities from "./screens/Liabilities";
+import Goals from "./screens/Goals";
+import IncomeExpenses from "./screens/IncomeExpenses";
+import QuoteScreen from "./screens/QuoteScreen";
 
-type RootStackParamList = { Main: undefined; Profile: undefined };
-type ChatsStackParamList = {
-  ChatsList: undefined;
-  Chat: { chatId: string; title: string };
+import { AuthProvider, useAuth } from "./providers/AuthProvider";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { ThemeProvider } from "./providers/ThemeProvider";
+import StripeAppProvider from "./providers/StripeProvider";
+
+const Tabs = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+const HEADER_OPTIONS = {
+  headerStyle: { backgroundColor: colors.card },
+  headerTitleStyle: { color: colors.text, fontWeight: "800" as const },
+  headerTintColor: colors.primary,
 };
-type AuthStackParamList = { SignIn: undefined; SignUp: undefined };
 
-const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator<RootStackParamList>();
-const ChatsStack = createNativeStackNavigator<ChatsStackParamList>();
-const AuthStack = createNativeStackNavigator<AuthStackParamList>();
+const TAB_OPTIONS = {
+  tabBarActiveTintColor: colors.text,
+  tabBarInactiveTintColor: "#94A3B8",
+  tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
+};
 
-function ChatsStackNavigator() {
+const nameMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+  Home: "home-outline",
+  Orders: "receipt-outline",
+  Seller: "storefront-outline",
+  More: "ellipsis-horizontal",
+};
+
+function TabsNav({ navigation }: any) {
   return (
-    <ChatsStack.Navigator>
-      <ChatsStack.Screen
-        name="ChatsList"
-        component={ChatsListScreen}
-        options={{ title: "Chats" }}
-      />
-      <ChatsStack.Screen
-        name="Chat"
-        component={ChatScreen}
-        options={({ route }) => ({ title: route.params.title })}
-      />
-    </ChatsStack.Navigator>
-  );
-}
-
-function MainTabs() {
-  return (
-    <Tab.Navigator
+    <Tabs.Navigator
       screenOptions={({ route }) => ({
-        headerShown: false,
-        tabBarActiveTintColor: "tomato",
-        tabBarInactiveTintColor: "gray",
-        tabBarIcon: ({ color, size, focused }) => {
-          let name: keyof typeof Ionicons.glyphMap = "ellipse-outline";
-          if (route.name === "Home") name = focused ? "home" : "home-outline";
-          if (route.name === "Chats")
-            name = focused ? "chatbubbles" : "chatbubbles-outline";
-          if (route.name === "Settings")
-            name = focused ? "settings" : "settings-outline";
-          if (route.name === "Search")
-            name = focused ? "search" : "search-outline";
-          if (route.name === "FirebaseTest")
-            name = focused ? "flame" : "flame-outline";
-          return <Ionicons name={name} size={size} color={color} />;
+        ...HEADER_OPTIONS,
+        ...TAB_OPTIONS,
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Profile")}
+            style={{
+              marginRight: 12,
+              marginBottom: 4,
+              backgroundColor: colors.primary,
+              borderRadius: 999,
+              paddingHorizontal: 8,
+              paddingVertical: 8,
+            }}
+          >
+            <Ionicons name="person" size={16} color={colors.background} />
+          </TouchableOpacity>
+        ),
+        tabBarIcon: ({ focused, color }) => {
+          let iconName = nameMap[route.name] || "ellipse";
+          if (route.name === "Home" && focused) iconName = "home";
+          if (route.name === "Orders" && focused) iconName = "receipt";
+          if (route.name === "Seller" && focused) iconName = "storefront";
+          return <Ionicons name={iconName} size={20} color={color} />;
         },
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Chats" component={ChatsStackNavigator} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
-      <Tab.Screen name="Search" component={SearchScreen} />
-      <Tab.Screen
-        name="FirebaseTest"
-        component={FirebaseTestScreen}
-        options={{ title: "Firebase" }}
-      />
-    </Tab.Navigator>
+      <Tabs.Screen name="Home" component={Home} options={{ title: "Discover" }} />
+      <Tabs.Screen name="Orders" component={Orders} options={{ title: "Orders" }} />
+      <Tabs.Screen name="Seller" component={Seller} />
+      <Tabs.Screen name="More" component={More} />
+      <Tabs.Screen name="Dev" component={DevMenu} />
+    </Tabs.Navigator>
   );
 }
 
-// --- Auth stack when user is logged out ---
-function AuthStackNavigator() {
-  return (
-    <AuthStack.Navigator>
-      <AuthStack.Screen
-        name="SignIn"
-        component={SignInScreen}
-        options={{ title: "Sign In" }}
-      />
-      <AuthStack.Screen
-        name="SignUp"
-        component={SignUpScreen}
-        options={{ title: "Create Account" }}
-      />
-    </AuthStack.Navigator>
-  );
-}
-
-// --- Gate that decides which stack to show ---
-function InnerNavigator() {
-  const { user, initializing } = useAuth();
-
-  if (initializing) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-        <ActivityIndicator />
-      </View>
-    );
-  }
-
-  if (!user) {
-    return <AuthStackNavigator />;
-  }
+function RootNavigator() {
+  const { user } = useAuth();
 
   return (
-    <Stack.Navigator>
-      <Stack.Screen
-        name="Main"
-        component={MainTabs}
-        options={({ navigation }) => ({
-          title: "My App",
-          headerRight: () => (
-            <Pressable
-              onPress={() => navigation.navigate("Profile")}
-              hitSlop={10}
-              style={({ pressed }) => ({
-                opacity: pressed ? 0.6 : 1,
-                paddingHorizontal: 6,
-              })}
-              android_ripple={
-                Platform.OS === "android" ? { borderless: true } : undefined
-              }
-            >
-              <Ionicons name="person-circle-outline" size={24} />
-            </Pressable>
-          ),
-        })}
-      />
-      <Stack.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{ title: "Profile" }}
-      />
+    <Stack.Navigator screenOptions={HEADER_OPTIONS}>
+      {user ? (
+        <>
+          <Stack.Screen name="Root" component={TabsNav} options={{ headerShown: false }} />
+          <Stack.Screen name="Shop" component={Shop} options={{ headerShown: false }} />
+          <Stack.Screen name="Checkout" component={Checkout} options={{ title: "Checkout" }} />
+          <Stack.Screen name="Profile" component={Profile} options={{ title: "Your profile" }} />
+          <Stack.Screen name="HelpAndSupport" component={HelpAndSupport} />
+          <Stack.Screen name="ContactSupport" component={ContactSupport} />
+          <Stack.Screen name="OrderDetail" component={OrderDetail} />
+          <Stack.Screen name="ManageAccount" component={ManageAccount} />
+          <Stack.Screen name="ManagePreferences" component={ManagePreferences} />
+          <Stack.Screen name="CreateShopDetails" component={CreateShopDetails} />
+          <Stack.Screen name="VerifyIdentity" component={VerifyIdentity} />
+          <Stack.Screen name="ConnectBank" component={ConnectBank} />
+          <Stack.Screen name="DevMenu" component={DevMenu} />
+          <Stack.Screen name="GameScreen" component={GameScreen} options={{ title: "Game Demo" }} />
+          <Stack.Screen name="WordleScreen" component={WordleScreen} options={{ title: "Wordle Demo" }} />
+          <Stack.Screen name="ThreeRunnerScreen" component={ThreeRunnerScreen} options={{ title: "3D Runner Demo" }} />
+          <Stack.Screen name="WaterSortScreen" component={WaterSortScreen} options={{ title: "Water Sort Demo" }} />
+          <Stack.Screen name="Overview" component={Overview} />
+          <Stack.Screen name="Transactions" component={Transactions} />
+          <Stack.Screen name="Assets" component={Assets} />
+          <Stack.Screen name="Liabilities" component={Liabilities} />
+          <Stack.Screen name="Goals" component={Goals} />
+          <Stack.Screen name="IncomeExpenses" component={IncomeExpenses} />
+          <Stack.Screen name="QuoteScreen" component={QuoteScreen} options={{ title: "Inspiring Quote" }} />
+        </>
+      ) : (
+        <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />
+      )}
     </Stack.Navigator>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <NavigationContainer>
-        <InnerNavigator />
-      </NavigationContainer>
-    </AuthProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <StripeAppProvider>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+          </StripeAppProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

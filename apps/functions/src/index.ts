@@ -1,72 +1,40 @@
-const functions = require("firebase-functions/v1");
-const dotenv = require("dotenv");
-dotenv.config();
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const express = require("express");
-const app = express();
-const cors = require("cors")({ origin: true }); // Enable CORS for all origins
-app.use(cors);
-const admin = require("firebase-admin");
-admin.initializeApp();
+// functions/src/index.ts
+import { onRequest } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
+import Stripe from "stripe";
+import corsLib from "cors";
+import { makeStripeHandlers } from "./stripe";
 
-// Payment Intent Function with Customer
-// Creation/Attachment and Payment Method Attachment
-/**
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- */
-exports.createPaymentIntentWithCustomer = functions.https.onRequest(
-  (req: any, res: any) => {
-    cors(req, res, async () => {
-      try {
-        const {
-          amount,
-          email,
-          createCustomer,
-          attachPaymentMethod,
-          currency,
-          destinationAccount,
-        } = req.body;
+/** ── Shared (lives here to avoid many files) ───────────────── */
+export const STRIPE_SECRET_KEY = defineSecret("STRIPE_SECRET_KEY");
 
-        let customer;
+// Wide-open for dev; restrict in prod
+export const cors = corsLib({ origin: true });
 
-        if (createCustomer && email) {
-          // Check if the customer already exists
-          const existingCustomers = await stripe.customers.list({
-            email: email,
-            limit: 1,
-          });
+export const getStripe = (sk: string) => new Stripe(sk, { apiVersion: "2024-06-20" as any });
 
-          if (existingCustomers.data.length > 0) {
-            customer = existingCustomers.data[0];
-          } else {
-            // Create a new customer if not existing
-            customer = await stripe.customers.create({
-              email: email,
-            });
-          }
-        }
-
-        // Create the payment intent
-        const paymentIntent = await stripe.paymentIntents.create({
-          amount: amount, // Amount in cents
-          currency: currency || "usd", // Use provided currency, default USD
-          customer: customer ? customer.id : undefined, // Attach customer
-          setup_future_usage: attachPaymentMethod ? "off_session" : undefined,
-          transfer_data: destinationAccount
-            ? { destination: destinationAccount }
-            : undefined, // Dest account
-        });
-
-        res.status(200).send({ clientSecret: paymentIntent.client_secret });
-      } catch (error) {
-        console.error("Error creating Stripe PaymentIntent:", error);
-        let errorMessage = "Unknown error";
-        if (error instanceof Error) {
-          errorMessage = error.message;
-        }
-        res.status(500).send({ error: errorMessage });
-      }
-    });
+export function ensurePost(req: any, res: any) {
+  if (req.method !== "POST") {
+    res.status(405).json({ error: "Method not allowed" });
+    return false;
   }
-);
+  return true;
+}
+
+/** ── Build Stripe functions using the shared deps ──────────── */
+const stripe = makeStripeHandlers({
+  onRequest,
+  STRIPE_SECRET_KEY,
+  cors,
+  getStripe,
+  ensurePost,
+});
+
+/** ── Re-export top-level Cloud Functions ───────────────────── */
+export const { createPaymentIntent, createIdentitySession, getIdentityStatus, createConnectOnboardingLink } = stripe;
+
+// In future you can add other categories similarly:
+// const auth = makeAuthHandlers({ onRequest, cors, ... });
+// export const { signIn, signOut } = auth;
+
+export { rapidApiCall } from "./rapidApi";

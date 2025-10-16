@@ -1,37 +1,54 @@
 {
   "expo": {
-    "name": "mobile",
-    "slug": "mobile",
+    "name": "basil",
+    "slug": "basil",
+    "owner": "liamc9",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "mobile",
+    "icon": "./assets/BasilAppIcon.png",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/BasilNameNoBG.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#43A047"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourco.myapp",
+      "bundleIdentifier": "com.basilapp.app",
+      "buildNumber": "2",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Allow Basil to use your location to auto-fill your shop location and show nearby shops."
       }
     },
     "android": {
+      "package": "com.basilapp.app",
+      "versionCode": 2,
+      "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      },
-      "edgeToEdgeEnabled": true
+        "foregroundImage": "./assets/BasilAppIcon.png",
+        "backgroundColor": "#43A047"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
+    "updates": {
+      "url": "https://u.expo.dev/e2b4187c-fd78-403b-89c5-4b7470ac7a41"
+    },
+    "plugins": [
+      "expo-web-browser",
+      "expo-dev-client",
+      "expo-asset"
+    ],
     "extra": {
       "eas": {
-        "projectId": "f7ec9662-8a23-49e9-96d6-ed8fb168b1d7"
+        "projectId": "e2b4187c-fd78-403b-89c5-4b7470ac7a41"
       }
     }
   }

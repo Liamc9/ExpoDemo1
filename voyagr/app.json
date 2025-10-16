@@ -1,0 +1,45 @@
+{
+  "expo": {
+    "name": "voyagr",
+    "slug": "voyagr",
+    "owner": "liamc9",
+    "version": "1.0.0",
+    "runtimeVersion": { "policy": "appVersion" },
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "scheme": "mobile",
+    "icon": "./assets/VoyagrLogo.png",
+    "splash": {
+      "image": "./assets/VoyagrNameLogoNoBG.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2ecc71"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.voyagrapp.app",
+      "buildNumber": "2",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSLocationWhenInUseUsageDescription": "Allow Voyagr to use your location to auto-fill your shop location and show nearby shops."
+      }
+    },
+    "android": {
+      "package": "com.voyagrapp.app",
+      "versionCode": 2,
+      "edgeToEdgeEnabled": true,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/VoyagrLogo.png",
+        "backgroundColor": "#2ecc71"
+      }
+    },
+    "web": { "favicon": "./assets/favicon.png" },
+    "updates": {
+      "url": "https://u.expo.dev/3dd381fe-c4d6-43ef-9b6a-108a0bd41ded"
+    },
+    "plugins": ["expo-web-browser", "expo-dev-client"],
+    "extra": {
+      "eas": { "projectId": "e2b4187c-fd78-403b-89c5-4b7470ac7a41" }
+    }
+  }
+}
