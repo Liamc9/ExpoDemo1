@@ -44,7 +44,7 @@ function fillPath(path: string, params: Record<string, any>) {
   });
 }
 
-export const rapidApiCall = onCall({ region: "europe-west1", secrets: [RAPID_API_KEY] }, async (request) => {
+export const rapidApiCall = onCall({ region: "europe-west2", secrets: [RAPID_API_KEY] }, async (request) => {
   const name = request.data?.name as keyof typeof endpoints;
   const params = (request.data?.params ?? {}) as Record<string, any>;
   const def = endpoints[name];

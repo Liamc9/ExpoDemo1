@@ -33,7 +33,7 @@ import Assets from "./screens/Assets";
 import Liabilities from "./screens/Liabilities";
 import Goals from "./screens/Goals";
 import IncomeExpenses from "./screens/IncomeExpenses";
-import QuoteScreen from "./screens/QuoteScreen";
+import RapidApiScreen from "./screens/RapidApiScreen";
 
 import { AuthProvider, useAuth } from "./providers/AuthProvider";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -131,7 +131,7 @@ function RootNavigator() {
           <Stack.Screen name="Liabilities" component={Liabilities} />
           <Stack.Screen name="Goals" component={Goals} />
           <Stack.Screen name="IncomeExpenses" component={IncomeExpenses} />
-          <Stack.Screen name="QuoteScreen" component={QuoteScreen} options={{ title: "Inspiring Quote" }} />
+          <Stack.Screen name="RapidApiScreen" component={RapidApiScreen} options={{ title: "Rapid API Demo" }} />
         </>
       ) : (
         <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />

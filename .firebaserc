@@ -1,5 +1,16 @@
 {
   "projects": {
-    "default": "expodemo-61d67"
-  }
+    "default": "expodemo-61d67",
+    "prod": "expodemo-61d67"
+  },
+  "targets": {
+    "expodemo-61d67": {
+      "hosting": {
+        "landing": [
+          "expodemo-61d67"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
