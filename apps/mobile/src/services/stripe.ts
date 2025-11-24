@@ -1,7 +1,4 @@
 // src/services/stripeService.ts
-
-// 🔹 Replace with your actual Cloud Functions base URL
-// Example: "https://europe-west2-your-project-id.cloudfunctions.net"
 const API_BASE_URL = "https://europe-west2-expodemo-61d67.cloudfunctions.net"; // ← change this
 
 // ─────────────────────────────────────────────────────────────

@@ -1,9 +1,10 @@
 import axios, { AxiosRequestConfig } from "axios";
-import { onCall } from "firebase-functions/v2/https";
+import { onRequest } from "firebase-functions/v2/https";
 import { defineSecret } from "firebase-functions/params";
+import corsLib from "cors";
 
-/** Secret: firebase functions:secrets:set RAPID_API_KEY */
 const RAPID_API_KEY = defineSecret("RAPID_API_KEY");
+const cors = corsLib({ origin: true, credentials: true });
 
 const endpoints = {
   "quotes.random": {
@@ -32,8 +33,6 @@ const endpoints = {
       desc: w?.weather?.[0]?.description,
     }),
   },
-
-  // 👉 add more endpoints here
 } as const;
 
 function fillPath(path: string, params: Record<string, any>) {
@@ -44,41 +43,72 @@ function fillPath(path: string, params: Record<string, any>) {
   });
 }
 
-export const rapidApiCall = onCall({ region: "europe-west1", secrets: [RAPID_API_KEY] }, async (request) => {
-  const name = request.data?.name as keyof typeof endpoints;
-  const params = (request.data?.params ?? {}) as Record<string, any>;
-  const def = endpoints[name];
-  if (!name || !def) throw new Error("Unknown or missing endpoint name");
+export const rapidApiCall = onRequest(
+  { region: "europe-west2", secrets: [RAPID_API_KEY] },
+  async (req, res) =>
+    new Promise<void>((resolve) => {
+      cors(req, res, async () => {
+        try {
+          // Accept POST with JSON body; optionally allow GET with querystring
+          if (req.method !== "POST" && req.method !== "GET") {
+            res.status(405).json({ ok: false, error: "Use POST (or GET for quick tests)" });
+            return resolve();
+          }
 
-  const url = `https://${def.host}${fillPath(def.path, params)}`;
+          const input = req.method === "GET" ? { ...req.query } : req.body ?? {};
+          const name = input?.name as keyof typeof endpoints;
+          const params = (input?.params ?? {}) as Record<string, any>;
+          const def = endpoints[name];
 
-  const query: Record<string, any> = {};
-  for (const k of def.query ?? []) if (params[k] != null) query[k] = params[k];
+          if (!name || !def) {
+            res.status(400).json({ ok: false, error: "Unknown or missing endpoint name" });
+            return resolve();
+          }
 
-  let body: any = undefined;
-  if ((def.body?.length ?? 0) > 0) {
-    body = {};
-    for (const k of def.body!) if (params[k] != null) body[k] = params[k];
-  }
+          const url = `https://${def.host}${fillPath(def.path, params)}`;
 
-  const config: AxiosRequestConfig = {
-    url,
-    method: def.method,
-    headers: {
-      "x-rapidapi-key": RAPID_API_KEY.value(),
-      "x-rapidapi-host": def.host,
-    },
-    params: query,
-    data: body,
-    timeout: 10_000,
-  };
+          const query: Record<string, any> = {};
+          for (const k of def.query ?? []) if (params[k] != null) query[k] = params[k];
 
-  try {
-    const res = await axios.request(config);
-    const out = def.transformServer ? def.transformServer(res.data) : res.data;
-    return { ok: true, data: out };
-  } catch (err: any) {
-    console.error("rapidApiCall error", name, err?.response?.data || err?.message);
-    throw new Error("Rapid API request failed");
-  }
-});
+          let body: any = undefined;
+          if ((def.body?.length ?? 0) > 0) {
+            body = {};
+            for (const k of def.body!) if (params[k] != null) body[k] = params[k];
+          }
+
+          const config: AxiosRequestConfig = {
+            url,
+            method: def.method,
+            headers: {
+              "x-rapidapi-key": RAPID_API_KEY.value(),
+              "x-rapidapi-host": def.host,
+            },
+            params: query,
+            data: body,
+            timeout: 10000,
+            validateStatus: () => true,
+          };
+
+          const r = await axios.request(config);
+
+          if (r.status < 200 || r.status >= 300) {
+            res.status(200).json({
+              ok: false,
+              error: `Upstream ${r.status}`,
+              upstreamStatus: r.status,
+              upstreamBody: r.data ?? null,
+            });
+            return resolve();
+          }
+
+          const out = (def as any).transformServer ? (def as any).transformServer(r.data) : r.data;
+          res.status(200).json({ ok: true, data: out });
+          resolve();
+        } catch (err: any) {
+          console.error("rapidApiCall error", err?.message);
+          res.status(200).json({ ok: false, error: err?.message ?? "Rapid API request failed" });
+          resolve();
+        }
+      });
+    })
+);

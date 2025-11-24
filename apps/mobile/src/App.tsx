@@ -1,10 +1,10 @@
-import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "./theme";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import Home from "./screens/Home";
 import Seller from "./screens/Seller";
@@ -33,27 +33,16 @@ import Assets from "./screens/Assets";
 import Liabilities from "./screens/Liabilities";
 import Goals from "./screens/Goals";
 import IncomeExpenses from "./screens/IncomeExpenses";
-import QuoteScreen from "./screens/QuoteScreen";
+import RapidApiScreen from "./screens/RapidApiScreen";
+import RapidDemoScreen from "./screens/RapidDemoScreen";
 
 import { AuthProvider, useAuth } from "./providers/AuthProvider";
-import { SafeAreaProvider } from "react-native-safe-area-context";
-import { ThemeProvider } from "./providers/ThemeProvider";
+import { ThemeProvider, useTheme } from "./providers/ThemeProvider";
 import StripeAppProvider from "./providers/StripeProvider";
 
 const Tabs = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
-
-const HEADER_OPTIONS = {
-  headerStyle: { backgroundColor: colors.card },
-  headerTitleStyle: { color: colors.text, fontWeight: "800" as const },
-  headerTintColor: colors.primary,
-};
-
-const TAB_OPTIONS = {
-  tabBarActiveTintColor: colors.text,
-  tabBarInactiveTintColor: "#94A3B8",
-  tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
-};
+const queryClient = new QueryClient();
 
 const nameMap: Record<string, keyof typeof Ionicons.glyphMap> = {
   Home: "home-outline",
@@ -63,6 +52,20 @@ const nameMap: Record<string, keyof typeof Ionicons.glyphMap> = {
 };
 
 function TabsNav({ navigation }: any) {
+  const { colors } = useTheme();
+
+  const HEADER_OPTIONS = {
+    headerStyle: { backgroundColor: colors.card },
+    headerTitleStyle: { color: colors.text, fontWeight: "800" as const },
+    headerTintColor: colors.primary,
+  };
+
+  const TAB_OPTIONS = {
+    tabBarActiveTintColor: colors.text,
+    tabBarInactiveTintColor: colors.secondary,
+    tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
+  };
+
   return (
     <Tabs.Navigator
       screenOptions={({ route }) => ({
@@ -102,7 +105,14 @@ function TabsNav({ navigation }: any) {
 }
 
 function RootNavigator() {
+  const { colors } = useTheme();
   const { user } = useAuth();
+
+  const HEADER_OPTIONS = {
+    headerStyle: { backgroundColor: colors.card },
+    headerTitleStyle: { color: colors.text, fontWeight: "800" as const },
+    headerTintColor: colors.primary,
+  };
 
   return (
     <Stack.Navigator screenOptions={HEADER_OPTIONS}>
@@ -131,7 +141,8 @@ function RootNavigator() {
           <Stack.Screen name="Liabilities" component={Liabilities} />
           <Stack.Screen name="Goals" component={Goals} />
           <Stack.Screen name="IncomeExpenses" component={IncomeExpenses} />
-          <Stack.Screen name="QuoteScreen" component={QuoteScreen} options={{ title: "Inspiring Quote" }} />
+          <Stack.Screen name="RapidApiScreen" component={RapidApiScreen} options={{ title: "Rapid API Demo" }} />
+          <Stack.Screen name="RapidDemoScreen" component={RapidDemoScreen} options={{ title: "Rapid API Extended Demo" }} />
         </>
       ) : (
         <Stack.Screen name="SignIn" component={SignInScreen} options={{ headerShown: false }} />
@@ -146,9 +157,11 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <StripeAppProvider>
-            <NavigationContainer>
-              <RootNavigator />
-            </NavigationContainer>
+            <QueryClientProvider client={queryClient}>
+              <NavigationContainer>
+                <RootNavigator />
+              </NavigationContainer>
+            </QueryClientProvider>
           </StripeAppProvider>
         </AuthProvider>
       </ThemeProvider>
