@@ -14,11 +14,21 @@ export type SiteConfig = {
     appleUrl?: string;
     playUrl?: string;
   };
+
   links: {
     privacyUrl: string;
     termsUrl: string;
     contactEmail: string;
+    loginUrl?: string;
+    getStartedUrl?: string;
+    social?: {
+      twitter?: string;
+      instagram?: string;
+      tiktok?: string;
+      linkedin?: string;
+    };
   };
+
   assets: {
     mockupSrc: string; // "./assets/mockup.png"
     appStoreBadgeSrc?: string; // "./assets/download-on-the-app-store.svg"
@@ -70,7 +80,13 @@ const config: SiteConfig = {
     privacyUrl: "/privacy.html",
     termsUrl: "/terms.html",
     contactEmail: "hello@example.com",
+    social: {
+      instagram: "https://instagram.com/yourbrand",
+      twitter: "https://twitter.com/yourbrand",
+      tiktok: "https://tiktok.com/@yourbrand",
+    },
   },
+
   assets: {
     mockupSrc: "./assets/mockup.png",
     appStoreBadgeSrc: "./assets/download-on-the-app-store.svg",
