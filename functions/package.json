@@ -11,6 +11,7 @@
     "deploy": "pnpm -s build && pnpm dlx firebase-tools@latest deploy --only functions"
   },
   "dependencies": {
+    "@google-cloud/functions-framework": "^5.0.0",
     "axios": "^1.12.2",
     "cors": "^2.8.5",
     "firebase-admin": "^13.5.0",

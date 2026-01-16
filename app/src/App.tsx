@@ -9,7 +9,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import Home from "./screens/Home";
 import Seller from "./screens/Seller";
 import Shop from "./screens/Shop";
-import Checkout from "./screens/Checkout";
+//import Checkout from "./screens/Checkout";
 import SignInScreen from "./screens/SignInScreen";
 import Profile from "./screens/ProfileScreen";
 import More from "./screens/More";
@@ -39,6 +39,7 @@ import RapidDemoScreen from "./screens/RapidDemoScreen";
 import { AuthProvider, useAuth } from "./providers/AuthProvider";
 import { ThemeProvider, useTheme } from "./providers/ThemeProvider";
 import StripeAppProvider from "./providers/StripeProvider";
+//import StripeAppProvider from "./providers/StripeProvider";
 
 const Tabs = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -120,7 +121,6 @@ function RootNavigator() {
         <>
           <Stack.Screen name="Root" component={TabsNav} options={{ headerShown: false }} />
           <Stack.Screen name="Shop" component={Shop} options={{ headerShown: false }} />
-          <Stack.Screen name="Checkout" component={Checkout} options={{ title: "Checkout" }} />
           <Stack.Screen name="Profile" component={Profile} options={{ title: "Your profile" }} />
           <Stack.Screen name="HelpAndSupport" component={HelpAndSupport} />
           <Stack.Screen name="ContactSupport" component={ContactSupport} />
@@ -156,13 +156,13 @@ export default function App() {
     <SafeAreaProvider>
       <ThemeProvider>
         <AuthProvider>
-          <StripeAppProvider>
+          {/*<StripeAppProvider>*/}
             <QueryClientProvider client={queryClient}>
               <NavigationContainer>
                 <RootNavigator />
               </NavigationContainer>
             </QueryClientProvider>
-          </StripeAppProvider>
+         {/*</StripeAppProvider>*/}
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>

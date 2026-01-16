@@ -1,40 +1,11 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  Platform,
-  StatusBar,
-} from "react-native";
+import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, ActivityIndicator, Alert, Platform, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { db, auth } from "../firebase-config";
-import {
-  collection,
-  doc,
-  onSnapshot,
-  addDoc,
-  serverTimestamp,
-  writeBatch,
-  updateDoc,
-  increment,
-  deleteDoc,
-  orderBy,
-  query,
-} from "firebase/firestore";
+import { collection, doc, onSnapshot, addDoc, serverTimestamp, writeBatch, updateDoc, increment, deleteDoc, orderBy, query } from "firebase/firestore";
 
 // --- Stripe (Apple Pay) ---
-import {
-  PlatformPay,
-  PlatformPayButton,
-  confirmPlatformPayPayment,
-  isPlatformPaySupported,
-} from "@stripe/stripe-react-native";
+import { PlatformPay, PlatformPayButton, confirmPlatformPayPayment, isPlatformPaySupported } from "@stripe/stripe-react-native";
 
 type CartItem = {
   id: string;
@@ -77,10 +48,7 @@ export default function Checkout({ navigation }: any) {
       setShopId(snap.exists() ? (snap.data().shopId as string) : null);
     });
 
-    const itemsQ = query(
-      collection(db, "carts", uid, "items"),
-      orderBy("productId", "asc")
-    );
+    const itemsQ = query(collection(db, "carts", uid, "items"), orderBy("productId", "asc"));
     const unsubItems = onSnapshot(
       itemsQ,
       (snap) => {
@@ -187,11 +155,7 @@ export default function Checkout({ navigation }: any) {
         batch.delete(doc(db, "carts", uid, "items", it.id));
       }
 
-      batch.set(
-        doc(db, "carts", uid),
-        { updatedAt: serverTimestamp() },
-        { merge: true }
-      );
+      batch.set(doc(db, "carts", uid), { updatedAt: serverTimestamp() }, { merge: true });
 
       await batch.commit();
 
@@ -226,7 +190,7 @@ export default function Checkout({ navigation }: any) {
     try {
       setPaying(true);
 
-      const base = process.env.EXPO_PUBLIC_API_BASE_URL!;
+      const base = "pk_test_51SDWBl3BApC2wVuMGPUAit5mqCmfDdOrd9mrsD88QKnBpdfkRgo6GO7Ik6mDN6jBm0GV1txFuSkxAF4CL0C5e8DK00zwr1uUZD";
       const res = await fetch(`${base}/createPaymentIntent`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -293,9 +257,7 @@ export default function Checkout({ navigation }: any) {
     <View style={styles.card}>
       <Image
         source={{
-          uri:
-            item.imageUrl ||
-            "https://images.unsplash.com/photo-1542831371-d531d36971e6?q=80&w=1200&auto=format&fit=crop",
+          uri: item.imageUrl || "https://images.unsplash.com/photo-1542831371-d531d36971e6?q=80&w=1200&auto=format&fit=crop",
         }}
         style={styles.cardImage}
       />
@@ -303,9 +265,7 @@ export default function Checkout({ navigation }: any) {
         <Text style={styles.cardTitle} numberOfLines={1}>
           {item.name}
         </Text>
-        <Text style={styles.cardSub}>
-          £{((item.unitPriceCents ?? 0) / 100).toFixed(2)}
-        </Text>
+        <Text style={styles.cardSub}>£{((item.unitPriceCents ?? 0) / 100).toFixed(2)}</Text>
 
         <View style={styles.rowBetween}>
           <View style={styles.stepper}>
@@ -383,35 +343,17 @@ export default function Checkout({ navigation }: any) {
         {/* Apple Pay button (iOS & supported) */}
         {Platform.OS === "ios" && appleSupported && canCheckout ? (
           <View style={{ marginTop: 12 }}>
-            <PlatformPayButton
-              type={PlatformPay.ButtonType.Buy}
-              appearance={PlatformPay.ButtonStyle.Black}
-              borderRadius={10}
-              style={{ width: "100%", height: 50 }}
-              onPress={payWithApplePay}
-              disabled={paying}
-            />
+            <PlatformPayButton type={PlatformPay.ButtonType.Buy} appearance={PlatformPay.ButtonStyle.Black} borderRadius={10} style={{ width: "100%", height: 50 }} onPress={payWithApplePay} disabled={paying} />
           </View>
         ) : null}
       </View>
 
       {/* Fallback CTA (Android or iOS without Apple Pay) */}
       {canCheckout ? (
-        <TouchableOpacity
-          style={[styles.checkoutBar, paying && { opacity: 0.6 }]}
-          activeOpacity={0.92}
-          onPress={
-            Platform.OS === "ios" && appleSupported
-              ? payWithApplePay
-              : placeOrder
-          }
-          disabled={paying}
-        >
+        <TouchableOpacity style={[styles.checkoutBar, paying && { opacity: 0.6 }]} activeOpacity={0.92} onPress={Platform.OS === "ios" && appleSupported ? payWithApplePay : placeOrder} disabled={paying}>
           <Ionicons name="bag-check" size={18} color="#FFFFFF" />
           <Text style={styles.checkoutText}>
-            {Platform.OS === "ios" && appleSupported
-              ? "Pay with Apple Pay • "
-              : "Place order • "}
+            {Platform.OS === "ios" && appleSupported ? "Pay with Apple Pay • " : "Place order • "}
             {count} item{count > 1 ? "s" : ""} • £{(total / 100).toFixed(2)}
           </Text>
           <View style={{ flex: 1 }} />

@@ -89,9 +89,9 @@ async function signInWithAppleNative() {
 
 export default function SignInScreen() {
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID!,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID!,
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_EXPO_CLIENT_ID!,
+    iosClientId: "239133658843-l2l98vsvt5at3ia7vvam3e9blvn56tgg.apps.googleusercontent.com",
+    androidClientId: "239133658843-2lk567392r6qfjbfn1p7g6gn29g9saqs.apps.googleusercontent.com",
+    webClientId: "239133658843-b25pd7i1m3f4l20lu58m6bm8iu6t49s1.apps.googleusercontent.com",
   });
 
   useEffect(() => {

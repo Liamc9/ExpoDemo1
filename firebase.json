@@ -5,17 +5,27 @@
     "ignore": ["node_modules", ".git", "firebase-debug.log", "firebase-debug.*.log", "**/node_modules/**"]
   },
   "emulators": {
-    "functions": { "port": 5001 },
-    "firestore": { "port": 8080 },
-    "auth": { "port": 9099 },
-    "ui": { "enabled": true }
-  },
-  "hosting": [
-    {
-      "target": "landing",
-      "public": "apps/landing/dist",
-      "ignore": ["**/.*", "**/node_modules/**"],
-      "cleanUrls": true
+    "functions": {
+      "port": 5001
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "auth": {
+      "port": 9099
+    },
+    "ui": {
+      "enabled": true
     }
-  ]
+  },
+  "hosting": {
+    "public": "app/dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  }
 }

@@ -22,7 +22,7 @@ export function ApplePayButton() {
   const pay = async () => {
     try {
       // Call your deployed Firebase Function
-      const base = process.env.EXPO_PUBLIC_API_BASE_URL!;
+      const base = "pk_test_51SDWBl3BApC2wVuMGPUAit5mqCmfDdOrd9mrsD88QKnBpdfkRgo6GO7Ik6mDN6jBm0GV1txFuSkxAF4CL0C5e8DK00zwr1uUZD";
       const response = await fetch(`${base}/createPaymentIntent`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },

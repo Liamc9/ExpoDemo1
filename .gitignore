@@ -1,12 +1,76 @@
-node_modules
-.pnpm-store
-dist
-lib
-.expo
-.expo-shared
-.vite
-coverage
-*.log
+# =========================
+# Dependencies / package managers
+# =========================
+**/node_modules/
+.pnpm-store/
+
+# =========================
+# Build outputs
+# =========================
+dist/
+**/dist/
+build/
+**/build/
+lib/
+**/lib/
+coverage/
+
+# =========================
+# Expo / React Native
+# =========================
+.expo/
+.expo-shared/
+web-build/
+**/.metro-health-check*
+
+# Expo generated typing (keep or ignore; I recommend ignore)
+expo-env.d.ts
+
+# Android / iOS native artifacts (if they ever appear)
+**/.kotlin/
+**/*.orig.*
+**/*.jks
+**/*.p8
+**/*.p12
+**/*.key
+**/*.mobileprovision
+**/*.pem
+
+# =========================
+# Firebase
+# =========================
+.firebase/
+firebase-debug.log
+firebase-debug.*.log
+
+# =========================
+# Environment files (commit .env.example only)
+# =========================
 .env
 .env.*
+**/.env.local
 apps/*/.env.local
+!.env.example
+
+# =========================
+# Logs
+# =========================
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+pnpm-debug.log*
+
+# =========================
+# Tooling / editor / OS
+# =========================
+.vite/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# =========================
+# TypeScript cache
+# =========================
+*.tsbuildinfo
