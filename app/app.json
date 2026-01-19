@@ -11,9 +11,9 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "scheme": "mobile",
-    "icon": "./assets/BasilAppIcon.png",
+    "icon": "./src/assets/BasilAppIcon.png",
     "splash": {
-      "image": "./assets/BasilNameNoBG.png",
+      "image": "./src/assets/BasilNameNoBG.png",
       "resizeMode": "contain",
       "backgroundColor": "#43A047"
     },
@@ -31,12 +31,12 @@
       "versionCode": 2,
       "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
-        "foregroundImage": "./assets/BasilAppIcon.png",
+        "foregroundImage": "./src/assets/BasilAppIcon.png",
         "backgroundColor": "#43A047"
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./src/assets/favicon.png"
     },
     "updates": {
       "url": "https://u.expo.dev/e2b4187c-fd78-403b-89c5-4b7470ac7a41"

@@ -69,6 +69,7 @@ function TabsNav({ navigation }: any) {
 
   return (
     <Tabs.Navigator
+      id="main-tabs"
       screenOptions={({ route }) => ({
         ...HEADER_OPTIONS,
         ...TAB_OPTIONS,
@@ -116,7 +117,7 @@ function RootNavigator() {
   };
 
   return (
-    <Stack.Navigator screenOptions={HEADER_OPTIONS}>
+    <Stack.Navigator id="root-stack" screenOptions={HEADER_OPTIONS}>
       {user ? (
         <>
           <Stack.Screen name="Root" component={TabsNav} options={{ headerShown: false }} />
@@ -157,12 +158,12 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           {/*<StripeAppProvider>*/}
-            <QueryClientProvider client={queryClient}>
-              <NavigationContainer>
-                <RootNavigator />
-              </NavigationContainer>
-            </QueryClientProvider>
-         {/*</StripeAppProvider>*/}
+          <QueryClientProvider client={queryClient}>
+            <NavigationContainer>
+              <RootNavigator />
+            </NavigationContainer>
+          </QueryClientProvider>
+          {/*</StripeAppProvider>*/}
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>

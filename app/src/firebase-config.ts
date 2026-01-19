@@ -1,8 +1,7 @@
-// firebase-config.js
+// firebase-config.ts
 import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-import { getFirestore } from "@firebase/firestore";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
 
@@ -16,10 +15,11 @@ const firebaseConfig = {
   measurementId: "G-BRK0Z3WFHL",
 };
 
-// Initialize Firebase and export services
-const app = initializeApp(firebaseConfig);
-export const analytics = typeof window !== "undefined" && typeof (window as any).document !== "undefined" ? getAnalytics(app) : undefined;
+export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
+
+// Optional: Analytics (web only)
+export const analyticsPromise = typeof window !== "undefined" ? import("firebase/analytics").then(({ getAnalytics }) => getAnalytics(app)) : Promise.resolve(undefined);
