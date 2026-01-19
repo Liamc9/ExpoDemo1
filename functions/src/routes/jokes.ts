@@ -11,13 +11,10 @@ export const getJoke = onRequest({ region: "europe-west2" }, async (req, res) =>
 
     if (r.status !== 200) {
       res.status(r.status).json({ ok: false, error: `Upstream ${r.status}` });
-      return; // ensure Promise<void>
+      return;
     }
-
     res.status(200).json({ ok: true, data: { id: r.data?.id, joke: r.data?.joke } });
-    // no return value
   } catch (e: any) {
     res.status(500).json({ ok: false, error: e?.message ?? "Server error" });
-    // no return value
   }
 });

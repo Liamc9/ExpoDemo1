@@ -1,34 +1,16 @@
 // screens/ContactSupport.tsx
 import React, { useEffect, useState } from "react";
-import {
-  Alert,
-  Linking,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Switch,
-  Text,
-  TextInput,
-  View,
-  Platform,
-} from "react-native";
+import { Alert, Linking, Pressable, SafeAreaView, ScrollView, StyleSheet, Switch, Text, TextInput, View, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Application from "expo-application";
-import { auth } from "../firebase-config";
+import { auth } from "../../firebase-config";
 
 type Profile = { firstName?: string; lastName?: string; name?: string };
 const STORAGE_KEY = "profile_v1";
 const SUPPORT_EMAIL = "support@yourapp.com";
 
-const ISSUE_TYPES = [
-  "General",
-  "Account",
-  "Orders",
-  "Payments",
-  "Bug",
-] as const;
+const ISSUE_TYPES = ["General", "Account", "Orders", "Payments", "Bug"] as const;
 type IssueType = (typeof ISSUE_TYPES)[number];
 
 export default function ContactSupport({ navigation }: any) {
@@ -36,9 +18,7 @@ export default function ContactSupport({ navigation }: any) {
 
   const user = auth.currentUser;
   const accountEmail = user?.email || ""; // source of truth
-  const [accountName, setAccountName] = useState<string>(
-    user?.displayName || ""
-  );
+  const [accountName, setAccountName] = useState<string>(user?.displayName || "");
 
   const [type, setType] = useState<IssueType>("General");
   const [message, setMessage] = useState("");
@@ -51,64 +31,30 @@ export default function ContactSupport({ navigation }: any) {
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
         if (raw) {
           const p: Profile = JSON.parse(raw);
-          const name =
-            p.firstName || p.lastName
-              ? `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim()
-              : p.name || "";
+          const name = p.firstName || p.lastName ? `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() : p.name || "";
           if (name) setAccountName(name);
         }
       } catch {}
     })();
   }, []);
 
-  const appVersion =
-    Application.nativeApplicationVersion && Application.nativeBuildVersion
-      ? `${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})`
-      : "dev";
+  const appVersion = Application.nativeApplicationVersion && Application.nativeBuildVersion ? `${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})` : "dev";
 
   const canSend = Boolean(accountEmail) && message.trim().length > 0;
 
   const onSend = async () => {
     if (!canSend) {
-      return Alert.alert(
-        "Missing info",
-        !accountEmail
-          ? "We need an email on your account to contact you back. Add one in Manage account."
-          : "Please write a message."
-      );
+      return Alert.alert("Missing info", !accountEmail ? "We need an email on your account to contact you back. Add one in Manage account." : "Please write a message.");
     }
 
     const subject = `Support: ${type}`;
-    const bodyLines = [
-      `Issue type: ${type}`,
-      `Name: ${accountName || "-"}`,
-      `Email: ${accountEmail}`,
-      "",
-      message.trim(),
-      "",
-      includeDevice
-        ? [
-            "—",
-            `App: ${Application.applicationName || "App"}`,
-            `Version: ${appVersion}`,
-            `App ID: ${Application.applicationId || "-"}`,
-            `OS: ${Platform.OS} ${Platform.Version}`,
-          ].join("\n")
-        : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
+    const bodyLines = [`Issue type: ${type}`, `Name: ${accountName || "-"}`, `Email: ${accountEmail}`, "", message.trim(), "", includeDevice ? ["—", `App: ${Application.applicationName || "App"}`, `Version: ${appVersion}`, `App ID: ${Application.applicationId || "-"}`, `OS: ${Platform.OS} ${Platform.Version}`].join("\n") : ""].filter(Boolean).join("\n");
 
-    const url = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(bodyLines)}`;
+    const url = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(bodyLines)}`;
 
     const can = await Linking.canOpenURL(url);
     if (!can) {
-      Alert.alert(
-        "No mail app",
-        `We couldn’t open your email client. You can email us at ${SUPPORT_EMAIL}.`
-      );
+      Alert.alert("No mail app", `We couldn’t open your email client. You can email us at ${SUPPORT_EMAIL}.`);
       return;
     }
     Linking.openURL(url);
@@ -116,62 +62,30 @@ export default function ContactSupport({ navigation }: any) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
-      <ScrollView
-        contentContainerStyle={s.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
         {/* Header */}
         <View style={s.header}>
           <Text style={[s.title, { color: theme.text }]}>Contact support</Text>
-          <Text style={[s.sub, { color: theme.sub }]}>
-            We usually reply within 1–2 business days.
-          </Text>
+          <Text style={[s.sub, { color: theme.sub }]}>We usually reply within 1–2 business days.</Text>
           <View style={s.badgeRow}>
-            <View
-              style={[
-                s.badge,
-                { borderColor: theme.border, backgroundColor: theme.card },
-              ]}
-            >
+            <View style={[s.badge, { borderColor: theme.border, backgroundColor: theme.card }]}>
               <Ionicons name="person-outline" size={14} color={theme.sub} />
-              <Text style={[s.badgeText, { color: theme.sub }]}>
-                {accountName || "No name set"}
-              </Text>
+              <Text style={[s.badgeText, { color: theme.sub }]}>{accountName || "No name set"}</Text>
             </View>
-            <View
-              style={[
-                s.badge,
-                { borderColor: theme.border, backgroundColor: theme.card },
-              ]}
-            >
+            <View style={[s.badge, { borderColor: theme.border, backgroundColor: theme.card }]}>
               <Ionicons name="mail-outline" size={14} color={theme.sub} />
-              <Text style={[s.badgeText, { color: theme.sub }]}>
-                {accountEmail || "No email on account"}
-              </Text>
+              <Text style={[s.badgeText, { color: theme.sub }]}>{accountEmail || "No email on account"}</Text>
             </View>
           </View>
           {!accountEmail ? (
-            <Pressable
-              onPress={() => navigation?.navigate?.("ManageAccount")}
-              style={({ pressed }) => [
-                s.addEmailBtn,
-                pressed && { opacity: 0.9 },
-              ]}
-            >
-              <Text style={[s.addEmailText, { color: theme.tint }]}>
-                Add an email in Manage account
-              </Text>
+            <Pressable onPress={() => navigation?.navigate?.("ManageAccount")} style={({ pressed }) => [s.addEmailBtn, pressed && { opacity: 0.9 }]}>
+              <Text style={[s.addEmailText, { color: theme.tint }]}>Add an email in Manage account</Text>
             </Pressable>
           ) : null}
         </View>
 
         {/* Issue type */}
-        <View
-          style={[
-            s.tile,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
-        >
+        <View style={[s.tile, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <Text style={[s.smallTitle, { color: theme.sub }]}>Issue type</Text>
           <View style={s.chipsRow}>
             {ISSUE_TYPES.map((t) => {
@@ -205,12 +119,7 @@ export default function ContactSupport({ navigation }: any) {
         </View>
 
         {/* Message */}
-        <View
-          style={[
-            s.tile,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
-        >
+        <View style={[s.tile, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <Text style={[s.smallTitle, { color: theme.sub }]}>Message</Text>
           <TextInput
             value={message}
@@ -231,15 +140,8 @@ export default function ContactSupport({ navigation }: any) {
           />
 
           <View style={s.rowBetween}>
-            <Text style={{ color: theme.sub, fontSize: 14 }}>
-              Include device info
-            </Text>
-            <Switch
-              value={includeDevice}
-              onValueChange={setIncludeDevice}
-              thumbColor={includeDevice ? theme.tint : undefined}
-              trackColor={{ true: "#DCE7FF", false: "#E5E7EB" }}
-            />
+            <Text style={{ color: theme.sub, fontSize: 14 }}>Include device info</Text>
+            <Switch value={includeDevice} onValueChange={setIncludeDevice} thumbColor={includeDevice ? theme.tint : undefined} trackColor={{ true: "#DCE7FF", false: "#E5E7EB" }} />
           </View>
         </View>
 
@@ -255,25 +157,14 @@ export default function ContactSupport({ navigation }: any) {
             },
           ]}
         >
-          <Ionicons
-            name="send-outline"
-            size={18}
-            color={canSend ? "#fff" : theme.disabled}
-          />
-          <Text
-            style={[s.submitText, { color: canSend ? "#fff" : theme.disabled }]}
-          >
-            Send
-          </Text>
+          <Ionicons name="send-outline" size={18} color={canSend ? "#fff" : theme.disabled} />
+          <Text style={[s.submitText, { color: canSend ? "#fff" : theme.disabled }]}>Send</Text>
         </Pressable>
 
         {/* Alt contact */}
         <View style={s.altWrap}>
           <Text style={{ color: theme.sub, fontSize: 12 }}>
-            Or email us directly at{" "}
-            <Text style={{ color: theme.text, fontWeight: "700" }}>
-              {SUPPORT_EMAIL}
-            </Text>
+            Or email us directly at <Text style={{ color: theme.text, fontWeight: "700" }}>{SUPPORT_EMAIL}</Text>
           </Text>
         </View>
       </ScrollView>

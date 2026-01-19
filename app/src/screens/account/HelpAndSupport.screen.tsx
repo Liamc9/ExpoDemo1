@@ -1,22 +1,10 @@
 // screens/HelpAndSupport.tsx
 import React, { useMemo, useState, useEffect } from "react";
-import {
-  Alert,
-  Linking,
-  Modal,
-  Platform,
-  Pressable,
-  SafeAreaView,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Alert, Linking, Modal, Platform, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Application from "expo-application";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { auth } from "../firebase-config";
+import { auth } from "../../firebase-config";
 
 /* ---------- FAQ data ---------- */
 type FAQ = { q: string; a: string; id: string };
@@ -42,13 +30,7 @@ const FAQS: FAQ[] = [
 /* ---------- Contact sheet config ---------- */
 const STORAGE_KEY = "profile_v1";
 const SUPPORT_EMAIL = "support@yourapp.com";
-const ISSUE_TYPES = [
-  "General",
-  "Account",
-  "Orders",
-  "Payments",
-  "Bug",
-] as const;
+const ISSUE_TYPES = ["General", "Account", "Orders", "Payments", "Bug"] as const;
 type IssueType = (typeof ISSUE_TYPES)[number];
 
 /* ---------- Screen ---------- */
@@ -62,63 +44,27 @@ export default function HelpAndSupport() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return FAQS;
-    return FAQS.filter(
-      (f) => f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q)
-    );
+    return FAQS.filter((f) => f.q.toLowerCase().includes(q) || f.a.toLowerCase().includes(q));
   }, [query]);
 
-  const toggle = (id: string) =>
-    setOpenIds((s) =>
-      s.includes(id) ? s.filter((x) => x !== id) : [...s, id]
-    );
+  const toggle = (id: string) => setOpenIds((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]));
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
-      <ScrollView
-        contentContainerStyle={s.scroll}
-        keyboardShouldPersistTaps="handled"
-      >
+      <ScrollView contentContainerStyle={s.scroll} keyboardShouldPersistTaps="handled">
         {/* Quick tiles */}
         <View style={s.quickRow}>
-          <QuickTile
-            icon="document-text-outline"
-            label="Terms"
-            onPress={() => Linking.openURL("https://yourapp.com/terms")}
-            theme={theme}
-          />
-          <QuickTile
-            icon="lock-closed-outline"
-            label="Privacy"
-            onPress={() => Linking.openURL("https://yourapp.com/privacy")}
-            theme={theme}
-          />
-          <QuickTile
-            icon="chatbubbles-outline"
-            label="Contact"
-            onPress={() => setContactOpen(true)}
-            theme={theme}
-          />
+          <QuickTile icon="document-text-outline" label="Terms" onPress={() => Linking.openURL("https://yourapp.com/terms")} theme={theme} />
+          <QuickTile icon="lock-closed-outline" label="Privacy" onPress={() => Linking.openURL("https://yourapp.com/privacy")} theme={theme} />
+          <QuickTile icon="chatbubbles-outline" label="Contact" onPress={() => setContactOpen(true)} theme={theme} />
         </View>
 
         <Text style={[s.sectionTitle, { color: theme.sub }]}>FAQs</Text>
 
         {/* Search */}
-        <View
-          style={[
-            s.searchBox,
-            { borderColor: theme.border, backgroundColor: theme.card },
-          ]}
-        >
+        <View style={[s.searchBox, { borderColor: theme.border, backgroundColor: theme.card }]}>
           <Ionicons name="search-outline" size={18} color={theme.sub} />
-          <TextInput
-            value={query}
-            onChangeText={setQuery}
-            placeholder="Search help articles"
-            placeholderTextColor={theme.sub}
-            style={[s.searchInput, { color: theme.text }]}
-            autoCapitalize="none"
-            returnKeyType="search"
-          />
+          <TextInput value={query} onChangeText={setQuery} placeholder="Search help articles" placeholderTextColor={theme.sub} style={[s.searchInput, { color: theme.text }]} autoCapitalize="none" returnKeyType="search" />
         </View>
         {/* FAQs */}
         <View style={{ gap: 10 }}>
@@ -138,56 +84,28 @@ export default function HelpAndSupport() {
                 ]}
               >
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.rowTitle, { color: theme.text }]}>
-                    {item.q}
-                  </Text>
-                  {open ? (
-                    <Text style={[s.rowBody, { color: theme.sub }]}>
-                      {item.a}
-                    </Text>
-                  ) : null}
+                  <Text style={[s.rowTitle, { color: theme.text }]}>{item.q}</Text>
+                  {open ? <Text style={[s.rowBody, { color: theme.sub }]}>{item.a}</Text> : null}
                 </View>
-                <Ionicons
-                  name={open ? "chevron-up" : "chevron-down"}
-                  size={18}
-                  color={theme.sub}
-                />
+                <Ionicons name={open ? "chevron-up" : "chevron-down"} size={18} color={theme.sub} />
               </Pressable>
             );
           })}
-          {filtered.length === 0 && (
-            <Text style={{ color: theme.sub }}>
-              No results. Try a different term.
-            </Text>
-          )}
+          {filtered.length === 0 && <Text style={{ color: theme.sub }}>No results. Try a different term.</Text>}
         </View>
       </ScrollView>
 
       {/* Contact Support Bottom Sheet */}
-      <ContactSheet
-        open={contactOpen}
-        onClose={() => setContactOpen(false)}
-        theme={theme}
-      />
+      <ContactSheet open={contactOpen} onClose={() => setContactOpen(false)} theme={theme} />
     </SafeAreaView>
   );
 }
 
 /* ---------- Contact sheet ---------- */
-function ContactSheet({
-  open,
-  onClose,
-  theme,
-}: {
-  open: boolean;
-  onClose: () => void;
-  theme: ReturnType<typeof useTheme>;
-}) {
+function ContactSheet({ open, onClose, theme }: { open: boolean; onClose: () => void; theme: ReturnType<typeof useTheme> }) {
   const user = auth.currentUser;
   const accountEmail = user?.email || "";
-  const [accountName, setAccountName] = useState<string>(
-    user?.displayName || ""
-  );
+  const [accountName, setAccountName] = useState<string>(user?.displayName || "");
   const [type, setType] = useState<IssueType>("General");
   const [message, setMessage] = useState("");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -199,59 +117,31 @@ function ContactSheet({
         const raw = await AsyncStorage.getItem(STORAGE_KEY);
         if (raw) {
           const p = JSON.parse(raw);
-          const name =
-            p.firstName || p.lastName
-              ? `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim()
-              : p.name || "";
+          const name = p.firstName || p.lastName ? `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() : p.name || "";
           if (name) setAccountName(name);
         }
       } catch {}
     })();
   }, []);
 
-  const appVersion =
-    Application.nativeApplicationVersion && Application.nativeBuildVersion
-      ? `${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})`
-      : "dev";
+  const appVersion = Application.nativeApplicationVersion && Application.nativeBuildVersion ? `${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})` : "dev";
 
   const canSend = Boolean(accountEmail) && message.trim().length > 0;
 
   const onSend = async () => {
     if (!canSend) {
-      Alert.alert(
-        "Missing info",
-        !accountEmail
-          ? "We need an email on your account to contact you back. Add one in Manage account."
-          : "Please write a message."
-      );
+      Alert.alert("Missing info", !accountEmail ? "We need an email on your account to contact you back. Add one in Manage account." : "Please write a message.");
       return;
     }
 
     const subject = `Support: ${type}`;
-    const body = [
-      `Issue type: ${type}`,
-      `Name: ${accountName || "-"}`,
-      `Email: ${accountEmail}`,
-      "",
-      message.trim(),
-      "",
-      "—",
-      `App: ${Application.applicationName || "App"}`,
-      `Version: ${appVersion}`,
-      `App ID: ${Application.applicationId || "-"}`,
-      `OS: ${Platform.OS} ${Platform.Version}`,
-    ].join("\n");
+    const body = [`Issue type: ${type}`, `Name: ${accountName || "-"}`, `Email: ${accountEmail}`, "", message.trim(), "", "—", `App: ${Application.applicationName || "App"}`, `Version: ${appVersion}`, `App ID: ${Application.applicationId || "-"}`, `OS: ${Platform.OS} ${Platform.Version}`].join("\n");
 
-    const url = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(body)}`;
+    const url = `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 
     const ok = await Linking.canOpenURL(url);
     if (!ok) {
-      Alert.alert(
-        "No mail app",
-        `We couldn’t open your email client. You can email us at ${SUPPORT_EMAIL}.`
-      );
+      Alert.alert("No mail app", `We couldn’t open your email client. You can email us at ${SUPPORT_EMAIL}.`);
       return;
     }
     Linking.openURL(url);
@@ -259,55 +149,29 @@ function ContactSheet({
   };
 
   return (
-    <Modal
-      visible={open}
-      animationType="slide"
-      transparent
-      onRequestClose={onClose}
-    >
+    <Modal visible={open} animationType="slide" transparent onRequestClose={onClose}>
       <View style={bs.wrap}>
         <Pressable style={bs.backdrop} onPress={onClose} />
         <View style={[bs.sheet, { backgroundColor: theme.card }]}>
           <View style={bs.grabber} />
           <Text style={[bs.title, { color: theme.text }]}>Contact support</Text>
-          <Text style={[bs.subtitle, { color: theme.sub }]}>
-            We usually reply within 1–2 business days.
-          </Text>
+          <Text style={[bs.subtitle, { color: theme.sub }]}>We usually reply within 1–2 business days.</Text>
 
           {/* Account badges */}
           <View style={s.badgeRow}>
-            <Badge
-              icon="person-outline"
-              text={accountName || "No name set"}
-              theme={theme}
-            />
-            <Badge
-              icon="mail-outline"
-              text={accountEmail || "No email on account"}
-              theme={theme}
-            />
+            <Badge icon="person-outline" text={accountName || "No name set"} theme={theme} />
+            <Badge icon="mail-outline" text={accountEmail || "No email on account"} theme={theme} />
           </View>
 
           {/* Issue type select */}
-          <Text style={[s.smallTitle, { color: theme.sub, marginTop: 12 }]}>
-            Issue type
-          </Text>
-          <Pressable
-            onPress={() => setPickerOpen(true)}
-            style={({ pressed }) => [
-              s.select,
-              { borderColor: theme.border, backgroundColor: theme.inputBg },
-              pressed && { opacity: 0.95 },
-            ]}
-          >
+          <Text style={[s.smallTitle, { color: theme.sub, marginTop: 12 }]}>Issue type</Text>
+          <Pressable onPress={() => setPickerOpen(true)} style={({ pressed }) => [s.select, { borderColor: theme.border, backgroundColor: theme.inputBg }, pressed && { opacity: 0.95 }]}>
             <Text style={{ color: theme.text, fontWeight: "700" }}>{type}</Text>
             <Ionicons name="chevron-down" size={18} color={theme.sub} />
           </Pressable>
 
           {/* Message box */}
-          <Text style={[s.smallTitle, { color: theme.sub, marginTop: 12 }]}>
-            Message
-          </Text>
+          <Text style={[s.smallTitle, { color: theme.sub, marginTop: 12 }]}>Message</Text>
           <TextInput
             value={message}
             onChangeText={setMessage}
@@ -338,36 +202,15 @@ function ContactSheet({
               },
             ]}
           >
-            <Ionicons
-              name="send-outline"
-              size={18}
-              color={canSend ? "#fff" : theme.disabled}
-            />
-            <Text
-              style={[
-                s.submitText,
-                { color: canSend ? "#fff" : theme.disabled },
-              ]}
-            >
-              Send
-            </Text>
+            <Ionicons name="send-outline" size={18} color={canSend ? "#fff" : theme.disabled} />
+            <Text style={[s.submitText, { color: canSend ? "#fff" : theme.disabled }]}>Send</Text>
           </Pressable>
 
           {/* Issue type picker (nested) */}
-          <Modal
-            visible={pickerOpen}
-            transparent
-            animationType="fade"
-            onRequestClose={() => setPickerOpen(false)}
-          >
-            <Pressable
-              style={bs.backdrop}
-              onPress={() => setPickerOpen(false)}
-            />
+          <Modal visible={pickerOpen} transparent animationType="fade" onRequestClose={() => setPickerOpen(false)}>
+            <Pressable style={bs.backdrop} onPress={() => setPickerOpen(false)} />
             <View style={[bs.innerSheet, { backgroundColor: theme.card }]}>
-              <Text style={[bs.innerTitle, { color: theme.text }]}>
-                Choose issue type
-              </Text>
+              <Text style={[bs.innerTitle, { color: theme.text }]}>Choose issue type</Text>
               {ISSUE_TYPES.map((opt) => {
                 const selected = opt === type;
                 return (
@@ -377,10 +220,7 @@ function ContactSheet({
                       setType(opt);
                       setPickerOpen(false);
                     }}
-                    style={({ pressed }) => [
-                      bs.row,
-                      pressed && { opacity: 0.95 },
-                    ]}
+                    style={({ pressed }) => [bs.row, pressed && { opacity: 0.95 }]}
                   >
                     <Text
                       style={[
@@ -393,9 +233,7 @@ function ContactSheet({
                     >
                       {opt}
                     </Text>
-                    {selected && (
-                      <Ionicons name="checkmark" size={18} color={theme.tint} />
-                    )}
+                    {selected && <Ionicons name="checkmark" size={18} color={theme.tint} />}
                   </Pressable>
                 );
               })}
@@ -408,19 +246,7 @@ function ContactSheet({
 }
 
 /* ---------- Small components ---------- */
-function QuickTile({
-  icon,
-  label,
-  onPress,
-  theme,
-  tint = false,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  onPress: () => void;
-  theme: ReturnType<typeof useTheme>;
-  tint?: boolean;
-}) {
+function QuickTile({ icon, label, onPress, theme, tint = false }: { icon: keyof typeof Ionicons.glyphMap; label: string; onPress: () => void; theme: ReturnType<typeof useTheme>; tint?: boolean }) {
   return (
     <Pressable
       onPress={onPress}
@@ -447,22 +273,9 @@ function QuickTile({
   );
 }
 
-function Badge({
-  icon,
-  text,
-  theme,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  text: string;
-  theme: ReturnType<typeof useTheme>;
-}) {
+function Badge({ icon, text, theme }: { icon: keyof typeof Ionicons.glyphMap; text: string; theme: ReturnType<typeof useTheme> }) {
   return (
-    <View
-      style={[
-        s.badge,
-        { borderColor: theme.border, backgroundColor: theme.card },
-      ]}
-    >
+    <View style={[s.badge, { borderColor: theme.border, backgroundColor: theme.card }]}>
       <Ionicons name={icon} size={14} color={theme.sub} />
       <Text style={[s.badgeText, { color: theme.sub }]}>{text}</Text>
     </View>

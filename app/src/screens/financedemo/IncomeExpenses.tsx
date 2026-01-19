@@ -1,20 +1,9 @@
 // screens/IncomeExpenses.tsx — Monthly Income & Expenses (EUR-only)
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  SectionList,
-  Modal,
-  TextInput,
-  Pressable,
-  Alert,
-  Platform,
-  TouchableOpacity,
-  RefreshControl,
-} from "react-native";
+import { View, Text, SectionList, Modal, TextInput, Pressable, Alert, Platform, TouchableOpacity, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
-import { db } from "../firebase-config";
+import { db } from "../../firebase-config";
 
 // ─── Light palette (same vibe as your other screens) ────────────────────────────
 const palette = {
@@ -287,14 +276,7 @@ export default function IncomeExpenses() {
 
             <Field label="Name" value={form.name} onChange={(t) => setForm({ ...form, name: t })} placeholder={form.type === "income" ? "e.g., Salary, Rent" : "e.g., Mortgage, Utilities"} />
 
-            <Field
-              label={`Amount (€ / month)`}
-              value={form.amount}
-              onChange={(t) => setForm({ ...form, amount: t })}
-              placeholder="0.00"
-              numeric
-              right={<Text style={{ color: palette.sub, fontWeight: "700" }}>EUR</Text>}
-            />
+            <Field label={`Amount (€ / month)`} value={form.amount} onChange={(t) => setForm({ ...form, amount: t })} placeholder="0.00" numeric right={<Text style={{ color: palette.sub, fontWeight: "700" }}>EUR</Text>} />
 
             <Field label="Day of month (optional)" value={form.dayOfMonth} onChange={(t) => setForm({ ...form, dayOfMonth: t })} placeholder="1–31" numeric />
 
@@ -356,19 +338,11 @@ function QuickButton({ icon, title, onPress }: { icon: any; title: string; onPre
 function FloatingAdd({ onPressIncome, onPressExpense }: { onPressIncome: () => void; onPressExpense: () => void }) {
   return (
     <View style={{ position: "absolute", right: 18, bottom: 24, flexDirection: "row", gap: 10 }}>
-      <TouchableOpacity
-        onPress={onPressExpense}
-        activeOpacity={0.9}
-        style={{ backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border, borderRadius: 28, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", ...shadow }}
-      >
+      <TouchableOpacity onPress={onPressExpense} activeOpacity={0.9} style={{ backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border, borderRadius: 28, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", ...shadow }}>
         <Ionicons name="remove" size={18} color={palette.danger} />
         <Text style={{ color: palette.text, fontWeight: "800", marginLeft: 6 }}>Expense</Text>
       </TouchableOpacity>
-      <TouchableOpacity
-        onPress={onPressIncome}
-        activeOpacity={0.9}
-        style={{ backgroundColor: palette.primary, borderRadius: 28, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", ...shadow }}
-      >
+      <TouchableOpacity onPress={onPressIncome} activeOpacity={0.9} style={{ backgroundColor: palette.primary, borderRadius: 28, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", ...shadow }}>
         <Ionicons name="add" size={18} color={palette.primaryText} />
         <Text style={{ color: palette.primaryText, fontWeight: "800", marginLeft: 6 }}>Income</Text>
       </TouchableOpacity>
@@ -394,23 +368,7 @@ function Button({ title, onPress, variant = "primary" }: { title: string; onPres
     </Pressable>
   );
 }
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  numeric = false,
-  multiline = false,
-  right,
-}: {
-  label: string;
-  value: string;
-  onChange: (t: string) => void;
-  placeholder?: string;
-  numeric?: boolean;
-  multiline?: boolean;
-  right?: React.ReactNode;
-}) {
+function Field({ label, value, onChange, placeholder, numeric = false, multiline = false, right }: { label: string; value: string; onChange: (t: string) => void; placeholder?: string; numeric?: boolean; multiline?: boolean; right?: React.ReactNode }) {
   return (
     <View style={{ marginBottom: 12 }}>
       <Label text={label} />
@@ -427,15 +385,7 @@ function Field({
           ...shadow,
         }}
       >
-        <TextInput
-          value={value}
-          onChangeText={onChange}
-          placeholder={placeholder}
-          placeholderTextColor={palette.sub}
-          keyboardType={numeric ? (Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric") : "default"}
-          style={{ flex: 1, color: palette.text, paddingVertical: 8 }}
-          multiline={multiline}
-        />
+        <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={palette.sub} keyboardType={numeric ? (Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric") : "default"} style={{ flex: 1, color: palette.text, paddingVertical: 8 }} multiline={multiline} />
         {right ? <View style={{ marginLeft: 8 }}>{right}</View> : null}
       </View>
     </View>

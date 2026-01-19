@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, ActivityIndicator, ScrollView } from "react-native";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase-config";
+import { db } from "../../firebase-config";
 
 const palette = {
   bg: "#F7F8FA",

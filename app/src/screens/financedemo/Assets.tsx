@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, SectionList, Modal, TextInput, Pressable, Alert, Platform, TouchableOpacity, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
-import { db } from "../firebase-config";
+import { db } from "../../firebase-config";
 
 // ─── Light palette ──────────────────────────────────────────────────────────────
 const palette = {

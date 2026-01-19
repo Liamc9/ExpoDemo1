@@ -8,7 +8,7 @@ import * as Crypto from "expo-crypto";
 import Constants from "expo-constants";
 import { LinearGradient } from "expo-linear-gradient";
 import { OAuthProvider, signInWithCredential, GoogleAuthProvider } from "firebase/auth";
-import { auth } from "../firebase-config";
+import { auth } from "../../firebase-config";
 
 WebBrowser.maybeCompleteAuthSession();
 

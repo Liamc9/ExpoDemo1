@@ -1,20 +1,9 @@
 // screens/Liabilities.tsx — Light Theme + Split by Category (EUR-only)
 import React, { useEffect, useMemo, useState } from "react";
-import {
-  View,
-  Text,
-  SectionList,
-  Modal,
-  TextInput,
-  Pressable,
-  Alert,
-  Platform,
-  TouchableOpacity,
-  RefreshControl,
-} from "react-native";
+import { View, Text, SectionList, Modal, TextInput, Pressable, Alert, Platform, TouchableOpacity, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
-import { db } from "../firebase-config";
+import { db } from "../../firebase-config";
 
 // ─── Light palette ──────────────────────────────────────────────────────────────
 const palette = {
@@ -84,17 +73,15 @@ export default function Liabilities() {
       const t = (it.type || "other").toString();
       (byType[t] || (byType[t] = [])).push(it);
     }
-    return LIAB_TYPES
-      .map((t) => {
-        const data = byType[t] || [];
-        return {
-          title: t,
-          total: sumBalances(data),
-          data: collapsed[t] ? [] : data,
-          count: data.length,
-        };
-      })
-      .filter((s) => s.count > 0 || collapsed[s.title] === true);
+    return LIAB_TYPES.map((t) => {
+      const data = byType[t] || [];
+      return {
+        title: t,
+        total: sumBalances(data),
+        data: collapsed[t] ? [] : data,
+        count: data.length,
+      };
+    }).filter((s) => s.count > 0 || collapsed[s.title] === true);
   }, [eurItems, collapsed]);
 
   function toggleSection(title: string) {
@@ -341,23 +328,7 @@ function Button({ title, onPress, variant = "primary" }: { title: string; onPres
   );
 }
 
-function Field({
-  label,
-  value,
-  onChange,
-  placeholder,
-  numeric = false,
-  multiline = false,
-  right,
-}: {
-  label: string;
-  value: string;
-  onChange: (t: string) => void;
-  placeholder?: string;
-  numeric?: boolean;
-  multiline?: boolean;
-  right?: React.ReactNode;
-}) {
+function Field({ label, value, onChange, placeholder, numeric = false, multiline = false, right }: { label: string; value: string; onChange: (t: string) => void; placeholder?: string; numeric?: boolean; multiline?: boolean; right?: React.ReactNode }) {
   return (
     <View style={{ marginBottom: 12 }}>
       <Label text={label} />
@@ -374,15 +345,7 @@ function Field({
           ...shadow,
         }}
       >
-        <TextInput
-          value={value}
-          onChangeText={onChange}
-          placeholder={placeholder}
-          placeholderTextColor={palette.sub}
-          keyboardType={numeric ? (Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric") : "default"}
-          style={{ flex: 1, color: palette.text, paddingVertical: 8 }}
-          multiline={multiline}
-        />
+        <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={palette.sub} keyboardType={numeric ? (Platform.OS === "ios" ? "numbers-and-punctuation" : "numeric") : "default"} style={{ flex: 1, color: palette.text, paddingVertical: 8 }} multiline={multiline} />
         {right ? <View style={{ marginLeft: 8 }}>{right}</View> : null}
       </View>
     </View>

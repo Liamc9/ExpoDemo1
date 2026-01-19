@@ -2,8 +2,8 @@
 import React, { useMemo, useState } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView, Alert, Linking, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useAuth } from "../providers/AuthProvider";
-import { auth } from "../firebase-config";
+import { useAuth } from "../../providers/AuthProvider";
+import { auth } from "../../firebase-config";
 import * as Application from "expo-application";
 
 const VERSION = Application?.nativeApplicationVersion && Application?.nativeBuildVersion ? `${Application.nativeApplicationVersion} (${Application.nativeBuildVersion})` : "1.0.0 (dev)";
