@@ -83,7 +83,7 @@ export default function SignInScreen() {
 
   return (
     <View style={s.root}>
-      <ImageBackground source={require("../../assets/BakeryImage.png")} style={s.bg} imageStyle={s.bgImage} resizeMode="cover">
+      <ImageBackground source={require("../../assets/images/BakeryImage.png")} style={s.bg} imageStyle={s.bgImage} resizeMode="cover">
         <SafeAreaView style={{ flex: 1 }}>
           <View style={s.topContent}>
             <Text style={s.appName}>Basil</Text>

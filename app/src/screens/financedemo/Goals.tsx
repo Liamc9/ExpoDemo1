@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, FlatList, Modal, TextInput, Pressable, Platform } from "react-native";
 import { collection, addDoc, onSnapshot } from "firebase/firestore";
-import { db } from "../firebase-config";
+import { db } from "../../firebase-config";
 
 export default function Goals() {
   const [items, setItems] = useState<any[]>([]);
