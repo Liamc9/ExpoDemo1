@@ -13,7 +13,7 @@
     "scheme": "basilnew",
     "icon": "./src/assets/logos/BasilAppIcon.png",
     "splash": {
-      "image": "./src/assets/logos/BasilNameNoBG.png",
+      "image": "./src/assets/logos/BasilAppIconNoBG.png",
       "resizeMode": "contain",
       "backgroundColor": "#43A047"
     },
@@ -36,13 +36,10 @@
       }
     },
     "web": {
-      "favicon": "./src/assets/logos/favicon.png"
+      "favicon": "./src/assets/logos/favicon.png",
+      "output": "single"
     },
-    "plugins": [
-      "expo-web-browser",
-      "expo-dev-client",
-      "expo-asset"
-    ],
+    "plugins": ["expo-web-browser", "expo-dev-client", "expo-asset"],
     "extra": {
       "eas": {
         "projectId": "d21c179f-f1e4-4ebf-b287-b4923cc776ad"

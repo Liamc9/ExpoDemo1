@@ -1,9 +1,9 @@
-// screens/Assets.tsx — Light Theme + Split by Category (EUR-only)
+// screens/Liabilities.tsx — Light Theme + Split by Category (EUR-only)
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, SectionList, Modal, TextInput, Pressable, Alert, Platform, TouchableOpacity, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
-import { db } from "../../firebase-config";
+import { db } from "../../../firebase-config";
 
 // ─── Light palette ──────────────────────────────────────────────────────────────
 const palette = {
@@ -25,9 +25,9 @@ const shadow = Platform.select({
 });
 
 // Categories
-const ASSET_TYPES = ["cash", "current", "savings", "investment", "property", "other"] as const;
+const LIAB_TYPES = ["mortgage", "loan", "credit", "overdraft", "tax", "other"] as const;
 
-export default function Assets() {
+export default function Liabilities() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -37,8 +37,9 @@ export default function Assets() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
-    type: "current",
+    type: "mortgage",
     balance: "0",
+    interestRate: "0",
     institution: "",
     notes: "",
   });
@@ -47,7 +48,7 @@ export default function Assets() {
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const q = query(collection(db, "assets"), orderBy("createdAt", "desc"));
+    const q = query(collection(db, "liabilities"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       const arr: any[] = [];
       snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
@@ -58,21 +59,21 @@ export default function Assets() {
     return unsub;
   }, []);
 
-  // Only show EUR assets
+  // EUR-only liabilities
   const eurItems = useMemo(() => items.filter((it) => (it.currency || "EUR") === "EUR"), [items]);
 
   // Overall total (EUR)
   const overallTotal = useMemo(() => sumBalances(eurItems), [eurItems]);
 
-  // Build sectioned data with per-category totals (EUR)
+  // Build sections with per-category totals (EUR)
   const sections = useMemo(() => {
     const byType: Record<string, any[]> = {};
-    for (const t of ASSET_TYPES) byType[t] = [];
+    for (const t of LIAB_TYPES) byType[t] = [];
     for (const it of eurItems) {
       const t = (it.type || "other").toString();
       (byType[t] || (byType[t] = [])).push(it);
     }
-    return ASSET_TYPES.map((t) => {
+    return LIAB_TYPES.map((t) => {
       const data = byType[t] || [];
       return {
         title: t,
@@ -89,7 +90,7 @@ export default function Assets() {
 
   function openCreate() {
     setEditingId(null);
-    setForm({ name: "", type: "current", balance: "0", institution: "", notes: "" });
+    setForm({ name: "", type: "mortgage", balance: "0", interestRate: "0", institution: "", notes: "" });
     setOpen(true);
   }
 
@@ -97,8 +98,9 @@ export default function Assets() {
     setEditingId(row.id);
     setForm({
       name: String(row.name || ""),
-      type: String(row.type || "current"),
+      type: String(row.type || "mortgage"),
       balance: String(row.balance ?? "0"),
+      interestRate: String(row.interestRate ?? "0"),
       institution: String(row.institution || ""),
       notes: String(row.notes || ""),
     });
@@ -106,26 +108,30 @@ export default function Assets() {
   }
 
   async function save() {
-    if (!form.name.trim()) return Alert.alert("Missing name", "Please enter a name for this asset.");
+    if (!form.name.trim()) return Alert.alert("Missing name", "Please enter a name for this liability.");
     const bal = Number(form.balance);
     if (isNaN(bal)) return Alert.alert("Invalid balance", "Balance must be a number.");
+    const apr = Number(form.interestRate || 0);
+    if (isNaN(apr)) return Alert.alert("Invalid rate", "Interest must be a number (e.g. 4.5).");
 
     try {
       if (editingId) {
-        await updateDoc(doc(db, "assets", editingId), {
+        await updateDoc(doc(db, "liabilities", editingId), {
           name: form.name,
           type: form.type,
           currency: "EUR",
           balance: bal,
+          interestRate: apr,
           institution: form.institution,
           notes: form.notes,
         });
       } else {
-        await addDoc(collection(db, "assets"), {
+        await addDoc(collection(db, "liabilities"), {
           name: form.name,
           type: form.type,
           currency: "EUR",
           balance: bal,
+          interestRate: apr,
           institution: form.institution,
           notes: form.notes,
           createdAt: Date.now(),
@@ -133,21 +139,21 @@ export default function Assets() {
       }
       setOpen(false);
       setEditingId(null);
-      setForm({ name: "", type: "current", balance: "0", institution: "", notes: "" });
+      setForm({ name: "", type: "mortgage", balance: "0", interestRate: "0", institution: "", notes: "" });
     } catch (e: any) {
       Alert.alert("Save failed", e?.message || "Please try again.");
     }
   }
 
   async function remove(id: string) {
-    Alert.alert("Delete asset?", "This cannot be undone.", [
+    Alert.alert("Delete liability?", "This cannot be undone.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
           try {
-            await deleteDoc(doc(db, "assets", id));
+            await deleteDoc(doc(db, "liabilities", id));
           } catch (e: any) {
             Alert.alert("Delete failed", e?.message || "Please try again.");
           }
@@ -160,14 +166,14 @@ export default function Assets() {
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
       {/* Header */}
       <View style={{ paddingTop: 54, paddingHorizontal: 16, paddingBottom: 12 }}>
-        <Text style={{ color: palette.text, fontSize: 28, fontWeight: "800" }}>Assets</Text>
-        <Text style={{ color: palette.sub, marginTop: 4 }}>Euro only (€)</Text>
+        <Text style={{ color: palette.text, fontSize: 28, fontWeight: "800" }}>Liabilities</Text>
+        <Text style={{ color: palette.sub, marginTop: 4 }}>Euro only (€), grouped by category</Text>
       </View>
 
       {/* Overall total (EUR) */}
       <View style={{ paddingHorizontal: 16 }}>
         <View style={{ backgroundColor: palette.card, borderRadius: 14, borderWidth: 1, borderColor: palette.border, padding: 14, ...shadow }}>
-          <Text style={{ color: palette.sub, marginBottom: 6 }}>Overall total</Text>
+          <Text style={{ color: palette.sub, marginBottom: 6 }}>Total owed</Text>
           <Text style={{ color: palette.text, fontSize: 26, fontWeight: "900" }}>€{formatMoney(overallTotal)}</Text>
         </View>
       </View>
@@ -214,7 +220,11 @@ export default function Assets() {
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <View style={{ flex: 1, paddingRight: 12 }}>
                   <Text style={{ color: palette.text, fontSize: 16, fontWeight: "800" }}>{item.name}</Text>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 6 }}>{item.institution ? <SmallChip icon="business-outline" label={String(item.institution)} /> : null}</View>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 6 }}>
+                    <SmallChip icon="wallet-outline" label={String(item.type || "—")} />
+                    {item.institution ? <SmallChip icon="business-outline" label={String(item.institution)} /> : null}
+                    {item.interestRate ? <SmallChip icon="trending-up-outline" label={`${item.interestRate}% APR`} /> : null}
+                  </View>
                   {item.notes ? (
                     <Text style={{ color: palette.sub, marginTop: 8 }} numberOfLines={2}>
                       {item.notes}
@@ -234,7 +244,7 @@ export default function Assets() {
         ListEmptyComponent={
           !loading ? (
             <View style={{ padding: 16, alignItems: "center" }}>
-              <Text style={{ color: palette.sub, marginTop: 8 }}>No assets yet. Tap “Add asset” to create one.</Text>
+              <Text style={{ color: palette.sub, marginTop: 8 }}>No liabilities yet. Tap “Add liability” to create one.</Text>
             </View>
           ) : null
         }
@@ -258,37 +268,37 @@ export default function Assets() {
         }}
       >
         <Ionicons name="add" size={18} color={palette.primaryText} />
-        <Text style={{ color: palette.primaryText, fontWeight: "800", marginLeft: 6 }}>Add asset</Text>
+        <Text style={{ color: palette.primaryText, fontWeight: "800", marginLeft: 6 }}>Add liability</Text>
       </TouchableOpacity>
 
       {/* Add/Edit Modal */}
       <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
         <View style={{ flex: 1, backgroundColor: palette.bg }}>
           <View style={{ paddingTop: 54, paddingHorizontal: 16, paddingBottom: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <Text style={{ color: palette.text, fontSize: 20, fontWeight: "900" }}>{editingId ? "Edit asset" : "New asset"}</Text>
+            <Text style={{ color: palette.text, fontSize: 20, fontWeight: "900" }}>{editingId ? "Edit liability" : "New liability"}</Text>
             <TouchableOpacity onPress={() => setOpen(false)} style={{ padding: 8 }}>
               <Ionicons name="close" size={22} color={palette.text} />
             </TouchableOpacity>
           </View>
 
           <View style={{ padding: 16 }}>
-            <Field label="Name" value={form.name} onChange={(t) => setForm({ ...form, name: t })} placeholder="e.g., Revolut, BoI Saver, Vanguard" />
+            <Field label="Name" value={form.name} onChange={(t) => setForm({ ...form, name: t })} placeholder="e.g., BoI Mortgage, AIB Loan" />
 
             <Label text="Type" />
             <RowWrap>
-              {ASSET_TYPES.map((t) => (
+              {LIAB_TYPES.map((t) => (
                 <SelectableChip key={t} selected={form.type === t} onPress={() => setForm({ ...form, type: t })} label={titleCase(t)} />
               ))}
             </RowWrap>
 
             <Field label="Balance (€)" value={form.balance} onChange={(t) => setForm({ ...form, balance: t })} placeholder="0.00" numeric right={<Text style={{ color: palette.sub, fontWeight: "700" }}>EUR</Text>} />
-
-            <Field label="Institution (optional)" value={form.institution} onChange={(t) => setForm({ ...form, institution: t })} placeholder="Bank / Platform" />
+            <Field label="Interest % (APR)" value={form.interestRate} onChange={(t) => setForm({ ...form, interestRate: t })} placeholder="e.g., 4.25" numeric />
+            <Field label="Institution (optional)" value={form.institution} onChange={(t) => setForm({ ...form, institution: t })} placeholder="Bank / Lender" />
             <Field label="Notes (optional)" value={form.notes} onChange={(t) => setForm({ ...form, notes: t })} placeholder="Any notes…" multiline />
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
               <Button title="Cancel" onPress={() => setOpen(false)} variant="ghost" />
-              <Button title={editingId ? "Save changes" : "Save asset"} onPress={save} />
+              <Button title={editingId ? "Save changes" : "Save liability"} onPress={save} />
             </View>
           </View>
         </View>
@@ -298,7 +308,7 @@ export default function Assets() {
 }
 
 // ─── UI helpers ────────────────────────────────────────────────────────────────
-function Button({ title, onPress, variant = "primary" }: { title: string; onPress?: () => void; variant?: "primary" | "ghost" }) {
+function Button({ title, onPress, variant = "primary" }: { title: string; onPress: () => void; variant?: "primary" | "ghost" }) {
   const primary = variant === "primary";
   return (
     <Pressable

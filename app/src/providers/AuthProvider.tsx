@@ -49,6 +49,8 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<User | null>(null);
   const [initializing, setInitializing] = useState(true);
 
+  console.log("AUTH APP NAME", auth.app.name);
+
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
@@ -104,7 +106,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
       signOutNow,
       skipLogin,
     }),
-    [user, initializing]
+    [user, initializing],
   );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;

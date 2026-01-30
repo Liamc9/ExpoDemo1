@@ -4,9 +4,9 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../providers/ThemeProvider";
 
-import Home from "../screens/Home";
-import Orders from "../screens/Orders";
-import Seller from "../screens/Seller";
+import Home from "../screens/other/Home";
+import Orders from "../screens/other/Orders";
+import Seller from "../screens/other/Seller";
 import More from "../screens/account/More";
 
 const Tabs = createBottomTabNavigator();

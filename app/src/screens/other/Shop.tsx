@@ -1,31 +1,9 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  FlatList,
-  Image,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  Platform,
-} from "react-native";
+import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, ActivityIndicator, Alert, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { db, auth } from "../firebase-config";
-import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  onSnapshot,
-  setDoc,
-  serverTimestamp,
-  orderBy,
-  increment,
-} from "firebase/firestore";
-import type { Product, Shop } from "../types";
+import { db, auth } from "../../firebase-config";
+import { doc, getDoc, collection, query, where, onSnapshot, setDoc, serverTimestamp, orderBy, increment } from "firebase/firestore";
+import type { Product, Shop } from "../../types";
 
 type CartItem = {
   id: string;
@@ -57,35 +35,25 @@ export default function Shop({ route, navigation }: any) {
         setShop({ id: s.id, ...(s.data() as any) });
         setLoadingShop(false);
       },
-      () => setLoadingShop(false)
+      () => setLoadingShop(false),
     );
     return () => unsub();
   }, [shopId]);
 
   // --- subscribe products (active, newest first)
   useEffect(() => {
-    const pq = query(
-      collection(db, "products"),
-      where("shopId", "==", shopId),
-      where("isActive", "==", true),
-      orderBy("createdAt", "desc")
-    );
+    const pq = query(collection(db, "products"), where("shopId", "==", shopId), where("isActive", "==", true), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(
       pq,
       (s) => {
-        setProducts(
-          s.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Product[]
-        );
+        setProducts(s.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Product[]);
         setLoadingProducts(false);
       },
       (err) => {
         console.error("products snapshot error:", err);
         setLoadingProducts(false);
-        Alert.alert(
-          "Couldn’t load products",
-          "If Firestore asks for a composite index, open the link it provides to create it and try again."
-        );
-      }
+        Alert.alert("Couldn’t load products", "If Firestore asks for a composite index, open the link it provides to create it and try again.");
+      },
     );
     return () => unsub();
   }, [shopId]);
@@ -125,10 +93,7 @@ export default function Shop({ route, navigation }: any) {
   const addToCart = useCallback(
     async (p: Product) => {
       if (!uid) {
-        Alert.alert(
-          "Sign in required",
-          "Please sign in to add items to your cart."
-        );
+        Alert.alert("Sign in required", "Please sign in to add items to your cart.");
         return;
       }
       const cartRef = doc(db, "carts", uid);
@@ -137,18 +102,11 @@ export default function Shop({ route, navigation }: any) {
       // ensure cart is for this shop
       const cartSnap = await getDoc(cartRef);
       if (!cartSnap.exists()) {
-        await setDoc(
-          cartRef,
-          { shopId, updatedAt: serverTimestamp() },
-          { merge: true }
-        );
+        await setDoc(cartRef, { shopId, updatedAt: serverTimestamp() }, { merge: true });
       } else {
         const existingShop = cartSnap.data()?.shopId;
         if (existingShop && existingShop !== shopId) {
-          Alert.alert(
-            "Cart has items from another shop",
-            "Clear your cart or checkout before adding items from a different shop."
-          );
+          Alert.alert("Cart has items from another shop", "Clear your cart or checkout before adding items from a different shop.");
           return;
         }
       }
@@ -162,24 +120,18 @@ export default function Shop({ route, navigation }: any) {
           imageUrl: (p as any).imageUrl || null,
           qty: increment(1), // atomic increment (initializes from 0 if missing)
         },
-        { merge: true }
+        { merge: true },
       );
-      await setDoc(
-        cartRef,
-        { updatedAt: serverTimestamp(), shopId },
-        { merge: true }
-      );
+      await setDoc(cartRef, { updatedAt: serverTimestamp(), shopId }, { merge: true });
     },
-    [uid, shopId]
+    [uid, shopId],
   );
 
   const ProductCard = ({ item }: { item: Product }) => (
     <View style={styles.card}>
       <Image
         source={{
-          uri:
-            (item as any).imageUrl ||
-            "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=1200&auto=format&fit=crop",
+          uri: (item as any).imageUrl || "https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=1200&auto=format&fit=crop",
         }}
         style={styles.cardImage}
       />
@@ -199,11 +151,7 @@ export default function Shop({ route, navigation }: any) {
               </View>
             ))}
           </View>
-          <TouchableOpacity
-            onPress={() => addToCart(item)}
-            style={styles.addBtn}
-            activeOpacity={0.9}
-          >
+          <TouchableOpacity onPress={() => addToCart(item)} style={styles.addBtn} activeOpacity={0.9}>
             <Ionicons name="add" size={16} color="#111" />
             <Text style={styles.addBtnText}>Add</Text>
           </TouchableOpacity>
@@ -216,28 +164,18 @@ export default function Shop({ route, navigation }: any) {
     <View style={styles.header}>
       <Image
         source={{
-          uri:
-            shop?.coverUrl ||
-            "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1600&auto=format&fit=crop",
+          uri: shop?.coverUrl || "https://images.unsplash.com/photo-1514933651103-005eec06c04b?q=80&w=1600&auto=format&fit=crop",
         }}
         style={styles.headerImage}
       />
       <View style={styles.headerOverlay} />
       <SafeAreaView style={{ position: "absolute", top: 0, left: 0, right: 0 }}>
         <View style={styles.headerContent}>
-          <TouchableOpacity
-            onPress={() => navigation.goBack()}
-            style={styles.navBtn}
-            activeOpacity={0.9}
-          >
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.navBtn} activeOpacity={0.9}>
             <Ionicons name="chevron-back" size={18} color="#0B1220" />
           </TouchableOpacity>
           <View style={{ flex: 1 }} />
-          <TouchableOpacity
-            onPress={() => navigation.navigate("Checkout")}
-            style={styles.navBtn}
-            activeOpacity={0.9}
-          >
+          <TouchableOpacity onPress={() => navigation.navigate("Checkout")} style={styles.navBtn} activeOpacity={0.9}>
             <Ionicons name="cart-outline" size={18} color="#0B1220" />
           </TouchableOpacity>
         </View>
@@ -248,9 +186,7 @@ export default function Shop({ route, navigation }: any) {
           {shop?.name || "Shop"}
         </Text>
         <Text style={styles.shopMeta} numberOfLines={1}>
-          {(shop as any)?.tagline || "Homemade & local"} •{" "}
-          {(shop as any)?.eta || "20–30 min"} •{" "}
-          {(shop as any)?.priceBand || "££"}
+          {(shop as any)?.tagline || "Homemade & local"} • {(shop as any)?.eta || "20–30 min"} • {(shop as any)?.priceBand || "££"}
         </Text>
       </View>
     </View>
@@ -276,23 +212,11 @@ export default function Shop({ route, navigation }: any) {
       <Header />
 
       {/* Products grid (2 columns) */}
-      <FlatList
-        data={products}
-        keyExtractor={(i) => i.id}
-        renderItem={ProductCard}
-        numColumns={2}
-        columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }}
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: 120, gap: 12 }}
-        ListEmptyComponent={<Empty />}
-      />
+      <FlatList data={products} keyExtractor={(i) => i.id} renderItem={ProductCard} numColumns={2} columnWrapperStyle={{ gap: 12, paddingHorizontal: 16 }} contentContainerStyle={{ paddingTop: 8, paddingBottom: 120, gap: 12 }} ListEmptyComponent={<Empty />} />
 
       {/* Sticky Checkout bar */}
       {count > 0 ? (
-        <TouchableOpacity
-          activeOpacity={0.9}
-          onPress={() => navigation.navigate("Checkout")}
-          style={styles.checkoutBar}
-        >
+        <TouchableOpacity activeOpacity={0.9} onPress={() => navigation.navigate("Checkout")} style={styles.checkoutBar}>
           <Ionicons name="cart" size={18} color="#111" />
           <Text style={styles.checkoutText}>
             {count} item{count > 1 ? "s" : ""} • £{(subtotal / 100).toFixed(2)}

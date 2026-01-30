@@ -1,21 +1,9 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  Image,
-  SafeAreaView,
-  TextInput,
-  StatusBar,
-  StyleSheet,
-  RefreshControl,
-  Platform,
-} from "react-native";
+import { View, Text, FlatList, TouchableOpacity, Image, SafeAreaView, TextInput, StatusBar, StyleSheet, RefreshControl, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { db } from "../firebase-config";
+import { db } from "../../firebase-config";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import type { Shop } from "../types";
+import type { Shop } from "../../types";
 
 const CATEGORIES = ["All", "Bakery", "Coffee", "Meals", "Desserts", "Crafts"];
 
@@ -60,17 +48,8 @@ export default function Home({ navigation }: any) {
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     return shops.filter((s: any) => {
-      const inCategory =
-        category === "All" ||
-        (s.categories &&
-          s.categories
-            .map((c: string) => c.toLowerCase())
-            .includes(category.toLowerCase()));
-      const matchesQuery =
-        !q ||
-        s.name?.toLowerCase().includes(q) ||
-        s.slug?.toLowerCase().includes(q) ||
-        s.description?.toLowerCase().includes(q);
+      const inCategory = category === "All" || (s.categories && s.categories.map((c: string) => c.toLowerCase()).includes(category.toLowerCase()));
+      const matchesQuery = !q || s.name?.toLowerCase().includes(q) || s.slug?.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q);
       return inCategory && matchesQuery;
     });
   }, [shops, search, category]);
@@ -88,33 +67,16 @@ export default function Home({ navigation }: any) {
       {/* Search */}
       <View style={styles.searchWrap}>
         <Ionicons name="search" size={18} color={COLORS.subtext} />
-        <TextInput
-          placeholder="Search for bread, coffee, crafts…"
-          placeholderTextColor="#94A3B8"
-          value={search}
-          onChangeText={setSearch}
-          style={styles.searchInput}
-          returnKeyType="search"
-        />
+        <TextInput placeholder="Search for bread, coffee, crafts…" placeholderTextColor="#94A3B8" value={search} onChangeText={setSearch} style={styles.searchInput} returnKeyType="search" />
         {search ? (
-          <TouchableOpacity
-            onPress={() => setSearch("")}
-            accessibilityLabel="Clear search"
-          >
+          <TouchableOpacity onPress={() => setSearch("")} accessibilityLabel="Clear search">
             <Ionicons name="close-circle" size={18} color={COLORS.subtext} />
           </TouchableOpacity>
         ) : null}
       </View>
 
       {/* Category chips */}
-      <FlatList
-        data={CATEGORIES}
-        keyExtractor={(i) => i}
-        renderItem={renderChip}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.chipsContainer}
-      />
+      <FlatList data={CATEGORIES} keyExtractor={(i) => i} renderItem={renderChip} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsContainer} />
     </View>
   );
 
@@ -135,13 +97,7 @@ export default function Home({ navigation }: any) {
         accessibilityState={{ selected: active }}
         activeOpacity={0.9}
       >
-        <Text
-          numberOfLines={1}
-          style={[
-            styles.chipText,
-            active && { color: COLORS.accent, fontWeight: "800" },
-          ]}
-        >
+        <Text numberOfLines={1} style={[styles.chipText, active && { color: COLORS.accent, fontWeight: "800" }]}>
           {item}
         </Text>
       </TouchableOpacity>
@@ -149,30 +105,20 @@ export default function Home({ navigation }: any) {
   };
 
   const renderItem = ({ item }: { item: any }) => (
-    <TouchableOpacity
-      onPress={() => navigation.navigate("Shop", { shopId: item.id })}
-      activeOpacity={0.9}
-      style={styles.cardWrap}
-    >
+    <TouchableOpacity onPress={() => navigation.navigate("Shop", { shopId: item.id })} activeOpacity={0.9} style={styles.cardWrap}>
       <View style={styles.card}>
         {/* Cover */}
         <View style={styles.imageWrap}>
           <Image
             source={{
-              uri:
-                item.coverUrl ||
-                "https://images.unsplash.com/photo-1542831371-d531d36971e6?q=80&w=1200&auto=format&fit=crop",
+              uri: item.coverUrl || "https://images.unsplash.com/photo-1542831371-d531d36971e6?q=80&w=1200&auto=format&fit=crop",
             }}
             style={styles.image}
           />
           <View style={styles.imageOverlay} />
           {/* “Open” badge */}
           <View style={styles.badge}>
-            <Ionicons
-              name="checkmark-circle"
-              size={14}
-              color={COLORS.badgeText}
-            />
+            <Ionicons name="checkmark-circle" size={14} color={COLORS.badgeText} />
             <Text style={styles.badgeText}>Open</Text>
           </View>
         </View>
@@ -185,15 +131,12 @@ export default function Home({ navigation }: any) {
             </Text>
             <View style={styles.rating}>
               <Ionicons name="star" size={12} color={COLORS.accent} />
-              <Text style={styles.ratingText}>
-                {(item.rating ?? 4.8).toFixed(1)}
-              </Text>
+              <Text style={styles.ratingText}>{(item.rating ?? 4.8).toFixed(1)}</Text>
             </View>
           </View>
 
           <Text numberOfLines={1} style={styles.subtitle}>
-            @{item.slug} •{" "}
-            {item.shortTagline || item.tagline || "Homemade & local"}
+            @{item.slug} • {item.shortTagline || item.tagline || "Homemade & local"}
           </Text>
 
           <View style={styles.metaRow}>
@@ -202,20 +145,12 @@ export default function Home({ navigation }: any) {
               <Text style={styles.metaText}>{item.eta || "20–30 min"}</Text>
             </View>
             <View style={styles.metaPill}>
-              <Ionicons
-                name="pricetag-outline"
-                size={13}
-                color={COLORS.subtext}
-              />
+              <Ionicons name="pricetag-outline" size={13} color={COLORS.subtext} />
               <Text style={styles.metaText}>{item.priceBand || "££"}</Text>
             </View>
             {item.categories?.length ? (
               <View style={styles.metaPill}>
-                <Ionicons
-                  name="restaurant-outline"
-                  size={13}
-                  color={COLORS.subtext}
-                />
+                <Ionicons name="restaurant-outline" size={13} color={COLORS.subtext} />
                 <Text numberOfLines={1} style={styles.metaText}>
                   {item.categories[0]}
                 </Text>
@@ -236,20 +171,12 @@ export default function Home({ navigation }: any) {
         renderItem={renderItem}
         ListHeaderComponent={<Header />}
         contentContainerStyle={{ paddingBottom: 32 }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Ionicons
-              name="storefront-outline"
-              size={28}
-              color={COLORS.subtext}
-            />
+            <Ionicons name="storefront-outline" size={28} color={COLORS.subtext} />
             <Text style={styles.emptyTitle}>No shops found</Text>
-            <Text style={styles.emptySubtitle}>
-              Try a different search or category.
-            </Text>
+            <Text style={styles.emptySubtitle}>Try a different search or category.</Text>
           </View>
         }
       />

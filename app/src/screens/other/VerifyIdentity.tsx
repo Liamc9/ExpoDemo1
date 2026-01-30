@@ -2,7 +2,7 @@
 import React, { useCallback } from "react";
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useIdentityVerification } from "../hooks/useIdentityVerification";
+import { useIdentityVerification } from "../../hooks/useIdentityVerification";
 
 const ACCENT = "#2ecc71";
 
@@ -22,7 +22,7 @@ export default function VerifyIdentity({ navigation, route }: any) {
         Alert.alert("Canceled", "You can try again anytime.");
       }
     },
-    [navigation, draftShop]
+    [navigation, draftShop],
   );
 
   const onStart = async () => {

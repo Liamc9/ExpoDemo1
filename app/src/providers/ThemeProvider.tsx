@@ -3,11 +3,11 @@ import React, { createContext, useContext, useMemo } from "react";
 
 // --- Define your theme colors here ---
 const colors = {
-  background: "#FFFFFF",
+  background: "#43A047",
   text: "#111827",
   card: "#F5F5F5",
   border: "#E5E7EB",
-  primary: "#2ecc71",
+  primary: "#43A047",
   secondary: "#6B7280",
   success: "#16A34A",
   warning: "#F59E0B",

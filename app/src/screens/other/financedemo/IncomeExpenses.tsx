@@ -1,11 +1,11 @@
-// screens/Liabilities.tsx — Light Theme + Split by Category (EUR-only)
+// screens/IncomeExpenses.tsx — Monthly Income & Expenses (EUR-only)
 import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, SectionList, Modal, TextInput, Pressable, Alert, Platform, TouchableOpacity, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { collection, addDoc, onSnapshot, updateDoc, deleteDoc, doc, query, orderBy } from "firebase/firestore";
-import { db } from "../../firebase-config";
+import { db } from "../../../firebase-config";
 
-// ─── Light palette ──────────────────────────────────────────────────────────────
+// ─── Light palette (same vibe as your other screens) ────────────────────────────
 const palette = {
   bg: "#F7F8FA",
   card: "#FFFFFF",
@@ -17,6 +17,7 @@ const palette = {
   chipBg: "#F1F5F9",
   chipText: "#334155",
   danger: "#EF4444",
+  good: "#16A34A",
 };
 
 const shadow = Platform.select({
@@ -24,10 +25,9 @@ const shadow = Platform.select({
   android: { elevation: 3 },
 });
 
-// Categories
-const LIAB_TYPES = ["mortgage", "loan", "credit", "overdraft", "tax", "other"] as const;
+const TYPES = ["income", "expense"] as const;
 
-export default function Liabilities() {
+export default function IncomeExpenses() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -36,124 +36,120 @@ export default function Liabilities() {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({
+    type: "income",
     name: "",
-    type: "mortgage",
-    balance: "0",
-    interestRate: "0",
-    institution: "",
+    amount: "0",
+    dayOfMonth: "",
+    category: "",
     notes: "",
   });
 
-  // collapsed sections
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const q = query(collection(db, "liabilities"), orderBy("createdAt", "desc"));
+    // Store in one collection: "budgetItems"
+    const q = query(collection(db, "budgetItems"), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snap) => {
       const arr: any[] = [];
       snap.forEach((d) => arr.push({ id: d.id, ...d.data() }));
-      setItems(arr);
+      // Keep EUR-only if older items had other currencies
+      setItems(arr.filter((x) => (x.currency || "EUR") === "EUR"));
       setLoading(false);
       setRefreshing(false);
     });
     return unsub;
   }, []);
 
-  // EUR-only liabilities
-  const eurItems = useMemo(() => items.filter((it) => (it.currency || "EUR") === "EUR"), [items]);
+  const monthLabel = new Date().toISOString().slice(0, 7); // YYYY-MM (display only)
 
-  // Overall total (EUR)
-  const overallTotal = useMemo(() => sumBalances(eurItems), [eurItems]);
+  // Totals
+  const totalIncome = useMemo(() => sumByType(items, "income"), [items]);
+  const totalExpense = useMemo(() => sumByType(items, "expense"), [items]);
+  const net = useMemo(() => totalIncome - totalExpense, [totalIncome, totalExpense]);
 
-  // Build sections with per-category totals (EUR)
+  // Sections: Income / Expenses
   const sections = useMemo(() => {
-    const byType: Record<string, any[]> = {};
-    for (const t of LIAB_TYPES) byType[t] = [];
-    for (const it of eurItems) {
-      const t = (it.type || "other").toString();
-      (byType[t] || (byType[t] = [])).push(it);
-    }
-    return LIAB_TYPES.map((t) => {
-      const data = byType[t] || [];
-      return {
-        title: t,
-        total: sumBalances(data),
-        data: collapsed[t] ? [] : data,
-        count: data.length,
-      };
-    }).filter((s) => s.count > 0 || collapsed[s.title] === true);
-  }, [eurItems, collapsed]);
+    const income = items.filter((x) => x.type === "income").sort(sortByDayThenName);
+    const expense = items.filter((x) => x.type === "expense").sort(sortByDayThenName);
+    return [
+      {
+        title: "Income",
+        total: totalIncome,
+        data: collapsed["Income"] ? [] : income,
+        count: income.length,
+      },
+      {
+        title: "Expenses",
+        total: totalExpense,
+        data: collapsed["Expenses"] ? [] : expense,
+        count: expense.length,
+      },
+    ];
+  }, [items, collapsed, totalIncome, totalExpense]);
 
   function toggleSection(title: string) {
-    setCollapsed((prev) => ({ ...prev, [title]: !prev[title] }));
+    setCollapsed((p) => ({ ...p, [title]: !p[title] }));
   }
 
-  function openCreate() {
+  function openCreate(which: "income" | "expense") {
     setEditingId(null);
-    setForm({ name: "", type: "mortgage", balance: "0", interestRate: "0", institution: "", notes: "" });
+    setForm({ type: which, name: "", amount: "0", dayOfMonth: "", category: "", notes: "" });
     setOpen(true);
   }
 
   function openEdit(row: any) {
     setEditingId(row.id);
     setForm({
+      type: String(row.type || "income"),
       name: String(row.name || ""),
-      type: String(row.type || "mortgage"),
-      balance: String(row.balance ?? "0"),
-      interestRate: String(row.interestRate ?? "0"),
-      institution: String(row.institution || ""),
+      amount: String(row.amount ?? "0"),
+      dayOfMonth: String(row.dayOfMonth ?? ""),
+      category: String(row.category || ""),
       notes: String(row.notes || ""),
     });
     setOpen(true);
   }
 
   async function save() {
-    if (!form.name.trim()) return Alert.alert("Missing name", "Please enter a name for this liability.");
-    const bal = Number(form.balance);
-    if (isNaN(bal)) return Alert.alert("Invalid balance", "Balance must be a number.");
-    const apr = Number(form.interestRate || 0);
-    if (isNaN(apr)) return Alert.alert("Invalid rate", "Interest must be a number (e.g. 4.5).");
+    if (!form.name.trim()) return Alert.alert("Missing name", "Please enter a name.");
+    const amt = Number(form.amount);
+    if (isNaN(amt)) return Alert.alert("Invalid amount", "Amount must be a number.");
+    const day = form.dayOfMonth ? Number(form.dayOfMonth) : null;
+    if (day !== null && (isNaN(day) || day < 1 || day > 31)) return Alert.alert("Invalid day", "Use a day of month 1–31 or leave blank.");
+
+    const payload = {
+      type: form.type, // "income" | "expense"
+      name: form.name,
+      amount: amt, // monthly amount in EUR
+      dayOfMonth: day,
+      category: form.category,
+      notes: form.notes,
+      currency: "EUR",
+    };
 
     try {
       if (editingId) {
-        await updateDoc(doc(db, "liabilities", editingId), {
-          name: form.name,
-          type: form.type,
-          currency: "EUR",
-          balance: bal,
-          interestRate: apr,
-          institution: form.institution,
-          notes: form.notes,
-        });
+        await updateDoc(doc(db, "budgetItems", editingId), payload);
       } else {
-        await addDoc(collection(db, "liabilities"), {
-          name: form.name,
-          type: form.type,
-          currency: "EUR",
-          balance: bal,
-          interestRate: apr,
-          institution: form.institution,
-          notes: form.notes,
-          createdAt: Date.now(),
-        });
+        await addDoc(collection(db, "budgetItems"), { ...payload, createdAt: Date.now() });
       }
       setOpen(false);
       setEditingId(null);
-      setForm({ name: "", type: "mortgage", balance: "0", interestRate: "0", institution: "", notes: "" });
+      setForm({ type: "income", name: "", amount: "0", dayOfMonth: "", category: "", notes: "" });
     } catch (e: any) {
       Alert.alert("Save failed", e?.message || "Please try again.");
     }
   }
 
   async function remove(id: string) {
-    Alert.alert("Delete liability?", "This cannot be undone.", [
+    Alert.alert("Delete item?", "This cannot be undone.", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
           try {
-            await deleteDoc(doc(db, "liabilities", id));
+            await deleteDoc(doc(db, "budgetItems", id));
           } catch (e: any) {
             Alert.alert("Delete failed", e?.message || "Please try again.");
           }
@@ -166,16 +162,24 @@ export default function Liabilities() {
     <View style={{ flex: 1, backgroundColor: palette.bg }}>
       {/* Header */}
       <View style={{ paddingTop: 54, paddingHorizontal: 16, paddingBottom: 12 }}>
-        <Text style={{ color: palette.text, fontSize: 28, fontWeight: "800" }}>Liabilities</Text>
-        <Text style={{ color: palette.sub, marginTop: 4 }}>Euro only (€), grouped by category</Text>
+        <Text style={{ color: palette.text, fontSize: 28, fontWeight: "800" }}>Income & Expenses</Text>
+        <Text style={{ color: palette.sub, marginTop: 4 }}>{monthLabel} · monthly plan (EUR)</Text>
       </View>
 
-      {/* Overall total (EUR) */}
+      {/* Totals card */}
       <View style={{ paddingHorizontal: 16 }}>
         <View style={{ backgroundColor: palette.card, borderRadius: 14, borderWidth: 1, borderColor: palette.border, padding: 14, ...shadow }}>
-          <Text style={{ color: palette.sub, marginBottom: 6 }}>Total owed</Text>
-          <Text style={{ color: palette.text, fontSize: 26, fontWeight: "900" }}>€{formatMoney(overallTotal)}</Text>
+          <Row label="Income" value={totalIncome} color={palette.good} />
+          <Row label="Expenses" value={totalExpense} color={palette.danger} />
+          <Divider />
+          <Row label="Net" value={net} color={net >= 0 ? palette.good : palette.danger} large />
         </View>
+      </View>
+
+      {/* Quick actions */}
+      <View style={{ flexDirection: "row", gap: 10, paddingHorizontal: 16, paddingTop: 12 }}>
+        <QuickButton icon="add-circle-outline" title="Add income" onPress={() => openCreate("income")} />
+        <QuickButton icon="remove-circle-outline" title="Add expense" onPress={() => openCreate("expense")} />
       </View>
 
       {/* Sectioned list */}
@@ -201,7 +205,7 @@ export default function Liabilities() {
           >
             <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
               <View style={{ flex: 1, paddingRight: 8 }}>
-                <Text style={{ color: palette.text, fontSize: 16, fontWeight: "900" }}>{titleCase(section.title)}</Text>
+                <Text style={{ color: palette.text, fontSize: 16, fontWeight: "900" }}>{section.title}</Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 6 }}>
                   <SmallChip icon="layers-outline" label={`${section.count} item${section.count === 1 ? "" : "s"}`} />
                 </View>
@@ -221,9 +225,8 @@ export default function Liabilities() {
                 <View style={{ flex: 1, paddingRight: 12 }}>
                   <Text style={{ color: palette.text, fontSize: 16, fontWeight: "800" }}>{item.name}</Text>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 6 }}>
-                    <SmallChip icon="wallet-outline" label={String(item.type || "—")} />
-                    {item.institution ? <SmallChip icon="business-outline" label={String(item.institution)} /> : null}
-                    {item.interestRate ? <SmallChip icon="trending-up-outline" label={`${item.interestRate}% APR`} /> : null}
+                    {item.category ? <SmallChip icon="pricetags-outline" label={String(item.category)} /> : null}
+                    {item.dayOfMonth ? <SmallChip icon="calendar-outline" label={`Day ${item.dayOfMonth}`} /> : null}
                   </View>
                   {item.notes ? (
                     <Text style={{ color: palette.sub, marginTop: 8 }} numberOfLines={2}>
@@ -232,7 +235,9 @@ export default function Liabilities() {
                   ) : null}
                 </View>
                 <View style={{ alignItems: "flex-end" }}>
-                  <Text style={{ color: palette.text, fontSize: 18, fontWeight: "900" }}>€{formatMoney(Number(item.balance || 0))}</Text>
+                  <Text style={{ color: item.type === "income" ? palette.good : palette.text, fontSize: 18, fontWeight: "900" }}>
+                    {item.type === "income" ? "+" : "−"}€{formatMoney(Math.abs(Number(item.amount || 0)))}
+                  </Text>
                   <Pressable onPress={() => remove(item.id)} style={{ padding: 6, marginTop: 6 }}>
                     <Ionicons name="trash-outline" size={18} color={palette.danger} />
                   </Pressable>
@@ -244,70 +249,106 @@ export default function Liabilities() {
         ListEmptyComponent={
           !loading ? (
             <View style={{ padding: 16, alignItems: "center" }}>
-              <Text style={{ color: palette.sub, marginTop: 8 }}>No liabilities yet. Tap “Add liability” to create one.</Text>
+              <Text style={{ color: palette.sub, marginTop: 8 }}>No items yet. Use the buttons above to add income or expense.</Text>
             </View>
           ) : null
         }
       />
 
-      {/* Floating add button */}
-      <TouchableOpacity
-        onPress={openCreate}
-        activeOpacity={0.9}
-        style={{
-          position: "absolute",
-          right: 18,
-          bottom: 24,
-          backgroundColor: palette.primary,
-          borderRadius: 28,
-          paddingHorizontal: 18,
-          paddingVertical: 12,
-          flexDirection: "row",
-          alignItems: "center",
-          ...shadow,
-        }}
-      >
-        <Ionicons name="add" size={18} color={palette.primaryText} />
-        <Text style={{ color: palette.primaryText, fontWeight: "800", marginLeft: 6 }}>Add liability</Text>
-      </TouchableOpacity>
-
       {/* Add/Edit Modal */}
       <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
         <View style={{ flex: 1, backgroundColor: palette.bg }}>
           <View style={{ paddingTop: 54, paddingHorizontal: 16, paddingBottom: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <Text style={{ color: palette.text, fontSize: 20, fontWeight: "900" }}>{editingId ? "Edit liability" : "New liability"}</Text>
+            <Text style={{ color: palette.text, fontSize: 20, fontWeight: "900" }}>{editingId ? "Edit item" : "New item"}</Text>
             <TouchableOpacity onPress={() => setOpen(false)} style={{ padding: 8 }}>
               <Ionicons name="close" size={22} color={palette.text} />
             </TouchableOpacity>
           </View>
 
           <View style={{ padding: 16 }}>
-            <Field label="Name" value={form.name} onChange={(t) => setForm({ ...form, name: t })} placeholder="e.g., BoI Mortgage, AIB Loan" />
-
+            {/* Type selector */}
             <Label text="Type" />
             <RowWrap>
-              {LIAB_TYPES.map((t) => (
-                <SelectableChip key={t} selected={form.type === t} onPress={() => setForm({ ...form, type: t })} label={titleCase(t)} />
+              {TYPES.map((t) => (
+                <SelectableChip key={t} selected={form.type === t} onPress={() => setForm({ ...form, type: t })} label={t === "income" ? "Income" : "Expense"} />
               ))}
             </RowWrap>
 
-            <Field label="Balance (€)" value={form.balance} onChange={(t) => setForm({ ...form, balance: t })} placeholder="0.00" numeric right={<Text style={{ color: palette.sub, fontWeight: "700" }}>EUR</Text>} />
-            <Field label="Interest % (APR)" value={form.interestRate} onChange={(t) => setForm({ ...form, interestRate: t })} placeholder="e.g., 4.25" numeric />
-            <Field label="Institution (optional)" value={form.institution} onChange={(t) => setForm({ ...form, institution: t })} placeholder="Bank / Lender" />
+            <Field label="Name" value={form.name} onChange={(t) => setForm({ ...form, name: t })} placeholder={form.type === "income" ? "e.g., Salary, Rent" : "e.g., Mortgage, Utilities"} />
+
+            <Field label={`Amount (€ / month)`} value={form.amount} onChange={(t) => setForm({ ...form, amount: t })} placeholder="0.00" numeric right={<Text style={{ color: palette.sub, fontWeight: "700" }}>EUR</Text>} />
+
+            <Field label="Day of month (optional)" value={form.dayOfMonth} onChange={(t) => setForm({ ...form, dayOfMonth: t })} placeholder="1–31" numeric />
+
+            <Field label="Category (optional)" value={form.category} onChange={(t) => setForm({ ...form, category: t })} placeholder="e.g., Housing, Food, Transport" />
+
             <Field label="Notes (optional)" value={form.notes} onChange={(t) => setForm({ ...form, notes: t })} placeholder="Any notes…" multiline />
 
             <View style={{ flexDirection: "row", gap: 10, marginTop: 12 }}>
               <Button title="Cancel" onPress={() => setOpen(false)} variant="ghost" />
-              <Button title={editingId ? "Save changes" : "Save liability"} onPress={save} />
+              <Button title={editingId ? "Save changes" : "Save item"} onPress={save} />
             </View>
           </View>
         </View>
       </Modal>
+
+      {/* Floating add buttons */}
+      <FloatingAdd onPressIncome={() => openCreate("income")} onPressExpense={() => openCreate("expense")} />
     </View>
   );
 }
 
-// ─── UI helpers ────────────────────────────────────────────────────────────────
+// ─── UI pieces (inline, no external deps) ───────────────────────────────────────
+function Row({ label, value, color, large = false }: { label: string; value: number; color?: string; large?: boolean }) {
+  return (
+    <View style={{ flexDirection: "row", justifyContent: "space-between", paddingVertical: 6 }}>
+      <Text style={{ color: palette.sub }}>{label}</Text>
+      <Text style={{ color: color || palette.text, fontWeight: "900", fontSize: large ? 22 : 16 }}>€{formatMoney(Math.abs(value || 0))}</Text>
+    </View>
+  );
+}
+function Divider() {
+  return <View style={{ height: 1, backgroundColor: palette.border, marginVertical: 6 }} />;
+}
+function QuickButton({ icon, title, onPress }: { icon: any; title: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flex: 1,
+        backgroundColor: palette.card,
+        borderWidth: 1,
+        borderColor: palette.border,
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        alignItems: "center",
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 6,
+        opacity: pressed ? 0.95 : 1,
+        ...shadow,
+      })}
+    >
+      <Ionicons name={icon} size={18} color={palette.primary} />
+      <Text style={{ color: palette.text, fontWeight: "800" }}>{title}</Text>
+    </Pressable>
+  );
+}
+function FloatingAdd({ onPressIncome, onPressExpense }: { onPressIncome: () => void; onPressExpense: () => void }) {
+  return (
+    <View style={{ position: "absolute", right: 18, bottom: 24, flexDirection: "row", gap: 10 }}>
+      <TouchableOpacity onPress={onPressExpense} activeOpacity={0.9} style={{ backgroundColor: palette.card, borderWidth: 1, borderColor: palette.border, borderRadius: 28, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", ...shadow }}>
+        <Ionicons name="remove" size={18} color={palette.danger} />
+        <Text style={{ color: palette.text, fontWeight: "800", marginLeft: 6 }}>Expense</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={onPressIncome} activeOpacity={0.9} style={{ backgroundColor: palette.primary, borderRadius: 28, paddingHorizontal: 14, paddingVertical: 10, flexDirection: "row", alignItems: "center", ...shadow }}>
+        <Ionicons name="add" size={18} color={palette.primaryText} />
+        <Text style={{ color: palette.primaryText, fontWeight: "800", marginLeft: 6 }}>Income</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
 function Button({ title, onPress, variant = "primary" }: { title: string; onPress: () => void; variant?: "primary" | "ghost" }) {
   const primary = variant === "primary";
   return (
@@ -327,7 +368,6 @@ function Button({ title, onPress, variant = "primary" }: { title: string; onPres
     </Pressable>
   );
 }
-
 function Field({ label, value, onChange, placeholder, numeric = false, multiline = false, right }: { label: string; value: string; onChange: (t: string) => void; placeholder?: string; numeric?: boolean; multiline?: boolean; right?: React.ReactNode }) {
   return (
     <View style={{ marginBottom: 12 }}>
@@ -351,15 +391,12 @@ function Field({ label, value, onChange, placeholder, numeric = false, multiline
     </View>
   );
 }
-
 function Label({ text }: { text: string }) {
   return <Text style={{ color: palette.sub, marginBottom: 6, fontWeight: "600" }}>{text}</Text>;
 }
-
 function RowWrap({ children }: { children: React.ReactNode }) {
   return <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>{children}</View>;
 }
-
 function SelectableChip({ label, selected, onPress }: { label: string; selected: boolean; onPress: () => void }) {
   return (
     <Pressable
@@ -378,7 +415,6 @@ function SelectableChip({ label, selected, onPress }: { label: string; selected:
     </Pressable>
   );
 }
-
 function SmallChip({ icon, label }: { icon: any; label: string }) {
   return (
     <View style={{ flexDirection: "row", alignItems: "center", backgroundColor: palette.chipBg, borderWidth: 1, borderColor: palette.border, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 999, marginRight: 8, marginBottom: 8 }}>
@@ -388,15 +424,18 @@ function SmallChip({ icon, label }: { icon: any; label: string }) {
   );
 }
 
-// ─── helpers ────────────────────────────────────────────────────────────────────
+// ─── helpers ───────────────────────────────────────────────────────────────────
+function sumByType(arr: any[], type: "income" | "expense") {
+  return arr.filter((x) => x.type === type).reduce((acc, it) => acc + Number(it?.amount || 0), 0);
+}
+function sortByDayThenName(a: any, b: any) {
+  const ad = Number(a.dayOfMonth || 99);
+  const bd = Number(b.dayOfMonth || 99);
+  if (ad !== bd) return ad - bd;
+  return String(a.name || "").localeCompare(String(b.name || ""));
+}
 function formatMoney(n: number) {
   const fixed = (isFinite(n) ? n : 0).toFixed(2);
   const [i, d] = fixed.split(".");
   return i.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "." + d;
-}
-function sumBalances(arr: any[]) {
-  return arr.reduce((acc, it) => acc + Number(it?.balance || 0), 0);
-}
-function titleCase(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
 }

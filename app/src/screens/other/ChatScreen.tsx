@@ -1,15 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  KeyboardAvoidingView,
-  Platform,
-  FlatList,
-  StyleSheet,
-  SafeAreaView,
-} from "react-native";
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, FlatList, StyleSheet, SafeAreaView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { RouteProp, useRoute } from "@react-navigation/native";
 
@@ -54,9 +44,7 @@ export default function ChatScreen() {
   const { params } = useRoute<ChatRoute>();
   const { chatId } = params;
 
-  const [messages, setMessages] = useState<Message[]>(
-    (SEED[chatId] ?? []).sort((a, b) => a.at - b.at)
-  );
+  const [messages, setMessages] = useState<Message[]>((SEED[chatId] ?? []).sort((a, b) => a.at - b.at));
   const [input, setInput] = useState("");
   const listRef = useRef<FlatList<Message>>(null);
 
@@ -71,30 +59,15 @@ export default function ChatScreen() {
     };
     setMessages((prev) => [...prev, msg]);
     setInput("");
-    requestAnimationFrame(() =>
-      listRef.current?.scrollToEnd({ animated: true })
-    );
+    requestAnimationFrame(() => listRef.current?.scrollToEnd({ animated: true }));
   };
 
   const renderItem = ({ item }: { item: Message }) => {
     const mine = item.author === "me";
     return (
-      <View
-        style={[
-          s.bubbleRow,
-          { justifyContent: mine ? "flex-end" : "flex-start" },
-        ]}
-      >
-        <View
-          style={[
-            s.bubble,
-            mine ? s.bubbleMe : s.bubbleThem,
-            { maxWidth: "80%" },
-          ]}
-        >
-          <Text style={[s.bubbleText, { color: mine ? "#fff" : "#111" }]}>
-            {item.text}
-          </Text>
+      <View style={[s.bubbleRow, { justifyContent: mine ? "flex-end" : "flex-start" }]}>
+        <View style={[s.bubble, mine ? s.bubbleMe : s.bubbleThem, { maxWidth: "80%" }]}>
+          <Text style={[s.bubbleText, { color: mine ? "#fff" : "#111" }]}>{item.text}</Text>
         </View>
       </View>
     );
@@ -107,40 +80,19 @@ export default function ChatScreen() {
         <Text style={s.headerSub}>Online</Text>
       </View>
     ),
-    [params.title]
+    [params.title],
   );
 
   return (
     <SafeAreaView style={s.safe}>
-      <KeyboardAvoidingView
-        behavior={Platform.select({ ios: "padding", android: undefined })}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-      >
-        <FlatList
-          ref={listRef}
-          data={messages}
-          keyExtractor={(m) => m.id}
-          renderItem={renderItem}
-          contentContainerStyle={{ padding: 12, paddingBottom: 8 }}
-          ListHeaderComponent={ListHeader}
-          onContentSizeChange={() =>
-            listRef.current?.scrollToEnd({ animated: false })
-          }
-        />
+      <KeyboardAvoidingView behavior={Platform.select({ ios: "padding", android: undefined })} style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}>
+        <FlatList ref={listRef} data={messages} keyExtractor={(m) => m.id} renderItem={renderItem} contentContainerStyle={{ padding: 12, paddingBottom: 8 }} ListHeaderComponent={ListHeader} onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })} />
 
         <View style={s.inputBar}>
           <Pressable style={s.iconBtn}>
             <Ionicons name="add-outline" size={20} />
           </Pressable>
-          <TextInput
-            style={s.input}
-            value={input}
-            onChangeText={setInput}
-            placeholder="Message"
-            returnKeyType="send"
-            onSubmitEditing={send}
-          />
+          <TextInput style={s.input} value={input} onChangeText={setInput} placeholder="Message" returnKeyType="send" onSubmitEditing={send} />
           <Pressable style={s.iconBtn} onPress={send}>
             <Ionicons name="send-outline" size={18} />
           </Pressable>

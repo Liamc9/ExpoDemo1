@@ -1,8 +1,8 @@
 // screens/RapidDemoScreen.tsx
 import React, { useMemo, useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, StyleSheet, ScrollView } from "react-native";
-import Rapid from "../services/rapid";
-import { useRapid } from "../hooks/useRapid";
+import Rapid from "../../services/rapid";
+import { useRapid } from "../../hooks/useRapid";
 
 export default function RapidDemoScreen() {
   // --- Random Quote ---

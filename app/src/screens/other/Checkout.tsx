@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { View, Text, StyleSheet, SafeAreaView, FlatList, Image, TouchableOpacity, ActivityIndicator, Alert, Platform, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { db, auth } from "../firebase-config";
+import { db, auth } from "../../firebase-config";
 import { collection, doc, onSnapshot, addDoc, serverTimestamp, writeBatch, updateDoc, increment, deleteDoc, orderBy, query } from "firebase/firestore";
 
 // --- Stripe (Apple Pay) ---
@@ -56,11 +56,11 @@ export default function Checkout({ navigation }: any) {
           snap.docs.map((d) => ({
             id: d.id,
             ...(d.data() as any),
-          })) as CartItem[]
+          })) as CartItem[],
         );
         setLoading(false);
       },
-      () => setLoading(false)
+      () => setLoading(false),
     );
 
     return () => {
@@ -91,7 +91,7 @@ export default function Checkout({ navigation }: any) {
       const ref = doc(db, "carts", uid, "items", item.id);
       await updateDoc(ref, { qty: increment(1) });
     },
-    [uid]
+    [uid],
   );
 
   const dec = useCallback(
@@ -104,7 +104,7 @@ export default function Checkout({ navigation }: any) {
         await updateDoc(ref, { qty: increment(-1) });
       }
     },
-    [uid]
+    [uid],
   );
 
   const removeItem = useCallback(
@@ -112,7 +112,7 @@ export default function Checkout({ navigation }: any) {
       if (!uid) return;
       await deleteDoc(doc(db, "carts", uid, "items", item.id));
     },
-    [uid]
+    [uid],
   );
 
   // Persist order to Firestore (called after successful payment)

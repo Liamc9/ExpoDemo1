@@ -1,44 +1,11 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  ScrollView,
-  TouchableOpacity,
-  Image,
-  ActivityIndicator,
-  Alert,
-  Platform,
-  StatusBar,
-} from "react-native";
+import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Image, ActivityIndicator, Alert, Platform, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
-import { db } from "../firebase-config";
-import {
-  doc,
-  onSnapshot,
-  collection,
-  query,
-  orderBy,
-  onSnapshot as onSnapshotColl,
-  updateDoc,
-  Timestamp,
-  DocumentData,
-  addDoc,
-  writeBatch,
-} from "firebase/firestore";
+import { db } from "../../firebase-config";
+import { doc, onSnapshot, collection, query, orderBy, onSnapshot as onSnapshotColl, updateDoc, Timestamp, DocumentData, addDoc, writeBatch } from "firebase/firestore";
 
-type OrderStatus =
-  | "placed"
-  | "accepted"
-  | "preparing"
-  | "ready"
-  | "out_for_delivery"
-  | "completed"
-  | "delivered"
-  | "cancelled"
-  | "refunded";
+type OrderStatus = "placed" | "accepted" | "preparing" | "ready" | "out_for_delivery" | "completed" | "delivered" | "cancelled" | "refunded";
 
 type Order = {
   id: string;
@@ -63,13 +30,7 @@ type LineItem = {
   imageUrl?: string | null;
 };
 
-const UPCOMING = new Set<OrderStatus>([
-  "placed",
-  "accepted",
-  "preparing",
-  "ready",
-  "out_for_delivery",
-]);
+const UPCOMING = new Set<OrderStatus>(["placed", "accepted", "preparing", "ready", "out_for_delivery"]);
 
 export default function OrderDetail({ route, navigation }: any) {
   const orderId: string = route?.params?.orderId;
@@ -93,7 +54,7 @@ export default function OrderDetail({ route, navigation }: any) {
         }
         setLoading(false);
       },
-      () => setLoading(false)
+      () => setLoading(false),
     );
     return () => unsub();
   }, [orderId]);
@@ -101,10 +62,7 @@ export default function OrderDetail({ route, navigation }: any) {
   // Subscribe to line items
   useEffect(() => {
     if (!orderId) return;
-    const q = query(
-      collection(db, "orders", orderId, "items"),
-      orderBy("name")
-    );
+    const q = query(collection(db, "orders", orderId, "items"), orderBy("name"));
     const unsub = onSnapshotColl(q, (snap) => {
       const rows: LineItem[] = snap.docs.map((d) => ({
         id: d.id,
@@ -115,10 +73,7 @@ export default function OrderDetail({ route, navigation }: any) {
     return () => unsub();
   }, [orderId]);
 
-  const isUpcoming = useMemo(
-    () => UPCOMING.has(order?.status as OrderStatus),
-    [order?.status]
-  );
+  const isUpcoming = useMemo(() => UPCOMING.has(order?.status as OrderStatus), [order?.status]);
 
   // Actions
   const copyId = useCallback(async () => {
@@ -228,17 +183,12 @@ export default function OrderDetail({ route, navigation }: any) {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
-      <ScrollView
-        contentContainerStyle={{ padding: 16, paddingBottom: 28 }}
-        bounces
-      >
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 28 }} bounces>
         {/* Hero / Header */}
         <View style={styles.heroCard}>
           <Image
             source={{
-              uri:
-                order.heroImage ||
-                "https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1200&auto=format&fit=crop",
+              uri: order.heroImage || "https://images.unsplash.com/photo-1550547660-d9450f859349?q=80&w=1200&auto=format&fit=crop",
             }}
             style={styles.heroImage}
           />
@@ -258,10 +208,7 @@ export default function OrderDetail({ route, navigation }: any) {
                 <Ionicons name="receipt-outline" size={14} color="#6B7280" />
                 <Text style={styles.meta}>#{order.id.slice(0, 8)}</Text>
               </View>
-              <TouchableOpacity
-                onPress={() => navigation.navigate?.("HelpCenter")}
-                style={styles.linkRow}
-              >
+              <TouchableOpacity onPress={() => navigation.navigate?.("HelpCenter")} style={styles.linkRow}>
                 <Text style={styles.link}>Get help</Text>
                 <Ionicons name="chevron-forward" size={16} color="#2563EB" />
               </TouchableOpacity>
@@ -285,9 +232,7 @@ export default function OrderDetail({ route, navigation }: any) {
               <View key={it.id} style={styles.itemRow}>
                 <Image
                   source={{
-                    uri:
-                      it.imageUrl ||
-                      "https://images.unsplash.com/photo-1542831371-d531d36971e6?q=80&w=1200&auto=format&fit=crop",
+                    uri: it.imageUrl || "https://images.unsplash.com/photo-1542831371-d531d36971e6?q=80&w=1200&auto=format&fit=crop",
                   }}
                   style={styles.itemImg}
                 />
@@ -299,9 +244,7 @@ export default function OrderDetail({ route, navigation }: any) {
                     Qty {it.qty} • {money(it.unitPriceCents)}
                   </Text>
                 </View>
-                <Text style={styles.itemTotal}>
-                  {money((it.unitPriceCents || 0) * (it.qty || 0))}
-                </Text>
+                <Text style={styles.itemTotal}>{money((it.unitPriceCents || 0) * (it.qty || 0))}</Text>
               </View>
             ))
           )}
@@ -311,31 +254,19 @@ export default function OrderDetail({ route, navigation }: any) {
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Summary</Text>
           <Row label="Subtotal" value={money(order.subtotalCents)} />
-          {order.feesCents > 0 && (
-            <Row label="Fees" value={money(order.feesCents)} />
-          )}
+          {order.feesCents > 0 && <Row label="Fees" value={money(order.feesCents)} />}
           <Row label="Total" value={money(order.totalCents)} bold />
         </View>
 
         {/* Actions */}
         <View style={styles.actionsRow}>
-          <TouchableOpacity
-            onPress={reorder}
-            style={[styles.primaryBtn, busy && { opacity: 0.7 }]}
-            disabled={busy}
-            activeOpacity={0.92}
-          >
+          <TouchableOpacity onPress={reorder} style={[styles.primaryBtn, busy && { opacity: 0.7 }]} disabled={busy} activeOpacity={0.92}>
             <Ionicons name="bag-check" size={18} color="#fff" />
             <Text style={styles.primaryText}>Reorder</Text>
           </TouchableOpacity>
 
           {isUpcoming && (
-            <TouchableOpacity
-              onPress={cancelOrder}
-              style={[styles.secondaryBtn, busy && { opacity: 0.7 }]}
-              disabled={busy}
-              activeOpacity={0.9}
-            >
+            <TouchableOpacity onPress={cancelOrder} style={[styles.secondaryBtn, busy && { opacity: 0.7 }]} disabled={busy} activeOpacity={0.9}>
               <Ionicons name="close-circle" size={18} color="#111827" />
               <Text style={styles.secondaryText}>Cancel</Text>
             </TouchableOpacity>
@@ -440,31 +371,17 @@ function statusMeta(status: OrderStatus): {
 function StatusPill({ status }: { status: OrderStatus }) {
   const m = statusMeta(status);
   return (
-    <View
-      style={[styles.pill, { backgroundColor: m.bg, borderColor: m.border }]}
-    >
+    <View style={[styles.pill, { backgroundColor: m.bg, borderColor: m.border }]}>
       <Text style={[styles.pillText, { color: m.fg }]}>{m.label}</Text>
     </View>
   );
 }
 
-function Row({
-  label,
-  value,
-  bold = false,
-}: {
-  label: string;
-  value: string;
-  bold?: boolean;
-}) {
+function Row({ label, value, bold = false }: { label: string; value: string; bold?: boolean }) {
   return (
     <View style={styles.row}>
-      <Text style={[styles.rowLabel, bold && { fontWeight: "800" }]}>
-        {label}
-      </Text>
-      <Text style={[styles.rowValue, bold && { fontWeight: "800" }]}>
-        {value}
-      </Text>
+      <Text style={[styles.rowLabel, bold && { fontWeight: "800" }]}>{label}</Text>
+      <Text style={[styles.rowValue, bold && { fontWeight: "800" }]}>{value}</Text>
     </View>
   );
 }
@@ -479,10 +396,7 @@ function Timeline({ current }: { current: OrderStatus }) {
     { key: "delivered", label: "Delivered" },
   ];
 
-  const currentIdx =
-    steps.findIndex((s) => s.key === current) === -1
-      ? steps.length - 1
-      : steps.findIndex((s) => s.key === current);
+  const currentIdx = steps.findIndex((s) => s.key === current) === -1 ? steps.length - 1 : steps.findIndex((s) => s.key === current);
 
   return (
     <View style={styles.timeline}>
@@ -490,17 +404,9 @@ function Timeline({ current }: { current: OrderStatus }) {
         const done = i <= currentIdx;
         return (
           <View style={styles.timelineStep} key={s.key}>
-            <View
-              style={[styles.dot, done ? styles.dotDone : styles.dotTodo]}
-            />
-            {i < steps.length - 1 && (
-              <View
-                style={[styles.bar, done ? styles.barDone : styles.barTodo]}
-              />
-            )}
-            <Text style={[styles.tlLabel, done && styles.tlLabelDone]}>
-              {s.label}
-            </Text>
+            <View style={[styles.dot, done ? styles.dotDone : styles.dotTodo]} />
+            {i < steps.length - 1 && <View style={[styles.bar, done ? styles.barDone : styles.barTodo]} />}
+            <Text style={[styles.tlLabel, done && styles.tlLabelDone]}>{s.label}</Text>
           </View>
         );
       })}

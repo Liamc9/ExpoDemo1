@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { ScrollView, TouchableOpacity, Text, View, StyleSheet } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { useTheme } from "../providers/ThemeProvider"; // <-- import your hook
+import { useTheme } from "../../providers/ThemeProvider"; // <-- import your hook
 
 export default function DevMenu() {
   const navigation = useNavigation<any>();
@@ -39,7 +39,7 @@ export default function DevMenu() {
           fontWeight: "500",
         },
       }),
-    [colors]
+    [colors],
   );
 
   return (

@@ -1,42 +1,14 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  FlatList,
-  TouchableOpacity,
-  RefreshControl,
-  Image,
-  Platform,
-  StatusBar,
-} from "react-native";
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, RefreshControl, Image, Platform, StatusBar } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { db, auth } from "../firebase-config";
-import {
-  collection,
-  onSnapshot,
-  query,
-  where,
-  orderBy,
-  Timestamp,
-  DocumentData,
-} from "firebase/firestore";
+import { db, auth } from "../../firebase-config";
+import { collection, onSnapshot, query, where, orderBy, Timestamp, DocumentData } from "firebase/firestore";
 
 type Order = {
   id: string;
   shopId: string;
   buyerUid: string;
-  status:
-    | "placed"
-    | "accepted"
-    | "preparing"
-    | "ready"
-    | "out_for_delivery"
-    | "completed"
-    | "delivered"
-    | "cancelled"
-    | "refunded";
+  status: "placed" | "accepted" | "preparing" | "ready" | "out_for_delivery" | "completed" | "delivered" | "cancelled" | "refunded";
   subtotalCents: number;
   feesCents: number;
   totalCents: number;
@@ -47,19 +19,8 @@ type Order = {
   heroImage?: string | null;
 };
 
-const UPCOMING_STATUSES = new Set([
-  "placed",
-  "accepted",
-  "preparing",
-  "ready",
-  "out_for_delivery",
-]);
-const PAST_STATUSES = new Set([
-  "completed",
-  "delivered",
-  "cancelled",
-  "refunded",
-]);
+const UPCOMING_STATUSES = new Set(["placed", "accepted", "preparing", "ready", "out_for_delivery"]);
+const PAST_STATUSES = new Set(["completed", "delivered", "cancelled", "refunded"]);
 
 export default function Orders({ navigation }: any) {
   const uid = auth.currentUser?.uid ?? null;
@@ -72,11 +33,7 @@ export default function Orders({ navigation }: any) {
   useEffect(() => {
     if (!uid) return;
     setLoading(true);
-    const q = query(
-      collection(db, "orders"),
-      where("buyerUid", "==", uid),
-      orderBy("createdAt", "desc")
-    );
+    const q = query(collection(db, "orders"), where("buyerUid", "==", uid), orderBy("createdAt", "desc"));
     const unsub = onSnapshot(
       q,
       (snap) => {
@@ -87,7 +44,7 @@ export default function Orders({ navigation }: any) {
         setOrders(rows);
         setLoading(false);
       },
-      () => setLoading(false)
+      () => setLoading(false),
     );
     return () => unsub();
   }, [uid]);
@@ -113,11 +70,7 @@ export default function Orders({ navigation }: any) {
   const data = tab === "upcoming" ? upcoming : past;
 
   const renderItem = ({ item }: { item: Order }) => (
-    <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.9}
-      onPress={() => navigation.navigate?.("OrderDetail", { orderId: item.id })}
-    >
+    <TouchableOpacity style={styles.card} activeOpacity={0.9} onPress={() => navigation.navigate?.("OrderDetail", { orderId: item.id })}>
       <Image
         source={{
           uri:
@@ -161,10 +114,7 @@ export default function Orders({ navigation }: any) {
       <View style={styles.topbar}>
         <Text style={styles.title}>Orders</Text>
         <View style={{ flex: 1 }} />
-        <TouchableOpacity
-          style={styles.iconBtn}
-          onPress={() => navigation.goBack?.()}
-        >
+        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.goBack?.()}>
           <Ionicons name="close" size={18} color="#111827" />
         </TouchableOpacity>
       </View>
@@ -192,15 +142,8 @@ export default function Orders({ navigation }: any) {
           gap: 12,
           paddingTop: 8,
         }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <EmptyState
-            loading={loading}
-            isUpcoming={tab === "upcoming"}
-          />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        ListEmptyComponent={<EmptyState loading={loading} isUpcoming={tab === "upcoming"} />}
       />
     </SafeAreaView>
   );
@@ -221,9 +164,7 @@ function formatDate(ts?: Timestamp | null) {
   });
 }
 
-function statusMeta(
-  status: Order["status"]
-): { label: string; bg: string; fg: string; border: string } {
+function statusMeta(status: Order["status"]): { label: string; bg: string; fg: string; border: string } {
   switch (status) {
     case "placed":
       return { label: "Placed", bg: "#EFF6FF", fg: "#1D4ED8", border: "#DBEAFE" };
@@ -250,24 +191,13 @@ function statusMeta(
 function StatusPill({ status }: { status: Order["status"] }) {
   const m = statusMeta(status);
   return (
-    <View
-      style={[
-        styles.pill,
-        { backgroundColor: m.bg, borderColor: m.border },
-      ]}
-    >
+    <View style={[styles.pill, { backgroundColor: m.bg, borderColor: m.border }]}>
       <Text style={[styles.pillText, { color: m.fg }]}>{m.label}</Text>
     </View>
   );
 }
 
-function EmptyState({
-  loading,
-  isUpcoming,
-}: {
-  loading: boolean;
-  isUpcoming: boolean;
-}) {
+function EmptyState({ loading, isUpcoming }: { loading: boolean; isUpcoming: boolean }) {
   if (loading) {
     return (
       <View style={styles.emptyWrap}>
@@ -280,49 +210,20 @@ function EmptyState({
   return (
     <View style={styles.emptyWrap}>
       <Ionicons name="file-tray-outline" size={28} color="#9CA3AF" />
-      <Text style={styles.emptyTitle}>
-        {isUpcoming ? "No upcoming orders" : "No past orders yet"}
-      </Text>
-      <Text style={styles.emptySub}>
-        {isUpcoming
-          ? "When you place an order, you’ll see it here."
-          : "Completed and cancelled orders will appear here."}
-      </Text>
+      <Text style={styles.emptyTitle}>{isUpcoming ? "No upcoming orders" : "No past orders yet"}</Text>
+      <Text style={styles.emptySub}>{isUpcoming ? "When you place an order, you’ll see it here." : "Completed and cancelled orders will appear here."}</Text>
     </View>
   );
 }
 
-function Segmented({
-  value,
-  onChange,
-  options,
-}: {
-  value: string;
-  onChange: (v: any) => void;
-  options: { value: string; label: string }[];
-}) {
+function Segmented({ value, onChange, options }: { value: string; onChange: (v: any) => void; options: { value: string; label: string }[] }) {
   return (
     <View style={styles.segment}>
       {options.map((opt) => {
         const active = value === opt.value;
         return (
-          <TouchableOpacity
-            key={opt.value}
-            onPress={() => onChange(opt.value as any)}
-            activeOpacity={0.9}
-            style={[
-              styles.segmentBtn,
-              active && styles.segmentBtnActive,
-            ]}
-          >
-            <Text
-              style={[
-                styles.segmentText,
-                active && styles.segmentTextActive,
-              ]}
-            >
-              {opt.label}
-            </Text>
+          <TouchableOpacity key={opt.value} onPress={() => onChange(opt.value as any)} activeOpacity={0.9} style={[styles.segmentBtn, active && styles.segmentBtnActive]}>
+            <Text style={[styles.segmentText, active && styles.segmentTextActive]}>{opt.label}</Text>
           </TouchableOpacity>
         );
       })}

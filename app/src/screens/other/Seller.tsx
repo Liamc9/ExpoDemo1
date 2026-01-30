@@ -1,35 +1,14 @@
 import { useEffect, useRef, useState, useMemo } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  SafeAreaView,
-  StyleSheet,
-  ActivityIndicator,
-  Alert,
-  Platform,
-  Image,
-} from "react-native";
+import { View, Text, TextInput, TouchableOpacity, FlatList, SafeAreaView, StyleSheet, ActivityIndicator, Alert, Platform, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import * as ImageManipulator from "expo-image-manipulator";
 
-import { auth, db } from "../firebase-config";
-import {
-  collection,
-  query,
-  where,
-  onSnapshot,
-  addDoc,
-  orderBy,
-  serverTimestamp,
-  Unsubscribe,
-} from "firebase/firestore";
+import { auth, db } from "../../firebase-config";
+import { collection, query, where, onSnapshot, addDoc, orderBy, serverTimestamp, Unsubscribe } from "firebase/firestore";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-import type { Product, Shop } from "../types";
+import type { Product, Shop } from "../../types";
 import { onAuthStateChanged } from "firebase/auth";
 
 const storage = getStorage();
@@ -38,9 +17,7 @@ const storage = getStorage();
 const ACCENT = "#2ecc71";
 
 export default function Seller({ navigation }: any) {
-  const [userUid, setUserUid] = useState<string | null>(
-    auth.currentUser?.uid ?? null
-  );
+  const [userUid, setUserUid] = useState<string | null>(auth.currentUser?.uid ?? null);
   const [myShop, setMyShop] = useState<Shop | null>(null);
   const [loadingShop, setLoadingShop] = useState(true);
 
@@ -71,16 +48,11 @@ export default function Seller({ navigation }: any) {
       setLoadingShop(false);
       return;
     }
-    const qShops = query(
-      collection(db, "shops"),
-      where("ownerUid", "==", userUid)
-    );
+    const qShops = query(collection(db, "shops"), where("ownerUid", "==", userUid));
     const unsub = onSnapshot(
       qShops,
       (s) => {
-        const shop = s.docs[0]
-          ? ({ id: s.docs[0].id, ...(s.docs[0].data() as any) } as Shop)
-          : null;
+        const shop = s.docs[0] ? ({ id: s.docs[0].id, ...(s.docs[0].data() as any) } as Shop) : null;
         setMyShop(shop);
         setLoadingShop(false);
 
@@ -91,11 +63,7 @@ export default function Seller({ navigation }: any) {
         }
 
         if (shop?.id) {
-          const pq = query(
-            collection(db, "products"),
-            where("shopId", "==", shop.id),
-            orderBy("createdAt", "desc")
-          );
+          const pq = query(collection(db, "products"), where("shopId", "==", shop.id), orderBy("createdAt", "desc"));
           setLoadingProducts(true);
           productsUnsubRef.current = onSnapshot(
             pq,
@@ -104,18 +72,15 @@ export default function Seller({ navigation }: any) {
                 ps.docs.map((d) => ({
                   id: d.id,
                   ...(d.data() as any),
-                })) as Product[]
+                })) as Product[],
               );
               setLoadingProducts(false);
             },
             (err) => {
               console.error("products snapshot error:", err);
               setLoadingProducts(false);
-              Alert.alert(
-                "Products error",
-                "We couldn't load your products. If Firestore asks for an index, create it from the console link and try again."
-              );
-            }
+              Alert.alert("Products error", "We couldn't load your products. If Firestore asks for an index, create it from the console link and try again.");
+            },
           );
         } else {
           setProducts([]);
@@ -126,7 +91,7 @@ export default function Seller({ navigation }: any) {
         console.error("shop snapshot error:", err);
         setLoadingShop(false);
         Alert.alert("Shop error", "We couldn't load your shop.");
-      }
+      },
     );
     return () => {
       unsub();
@@ -153,10 +118,7 @@ export default function Seller({ navigation }: any) {
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
-      Alert.alert(
-        "Permission needed",
-        "Allow photo access to upload a picture."
-      );
+      Alert.alert("Permission needed", "Allow photo access to upload a picture.");
       return;
     }
 
@@ -170,11 +132,7 @@ export default function Seller({ navigation }: any) {
 
     // downsize for faster upload
     const asset = res.assets[0];
-    const manipulated = await ImageManipulator.manipulateAsync(
-      asset.uri,
-      [{ resize: { width: 1200 } }],
-      { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG }
-    );
+    const manipulated = await ImageManipulator.manipulateAsync(asset.uri, [{ resize: { width: 1200 } }], { compress: 0.85, format: ImageManipulator.SaveFormat.JPEG });
     setImageUri(manipulated.uri);
   };
 
@@ -231,9 +189,7 @@ export default function Seller({ navigation }: any) {
     <View style={styles.productCard}>
       <Image
         source={{
-          uri:
-            (item as any).imageUrl ||
-            "https://via.placeholder.com/160x120?text=No+Image",
+          uri: (item as any).imageUrl || "https://via.placeholder.com/160x120?text=No+Image",
         }}
         style={styles.productImage}
       />
@@ -242,8 +198,7 @@ export default function Seller({ navigation }: any) {
           {item.name}
         </Text>
         <Text style={styles.productMeta}>
-          £{((item.priceCents ?? 0) / 100).toFixed(2)} •{" "}
-          {item.isActive ? "Active" : "Inactive"}
+          £{((item.priceCents ?? 0) / 100).toFixed(2)} • {item.isActive ? "Active" : "Inactive"}
         </Text>
       </View>
       <Ionicons name="chevron-forward" size={18} color="#98A2B3" />
@@ -271,31 +226,14 @@ export default function Seller({ navigation }: any) {
           </View>
 
           <Text style={styles.emptyTitleBig}>Create your shop</Text>
-          <Text style={styles.emptySubBig}>
-            Set a name and cover image to start listing products.
-          </Text>
+          <Text style={styles.emptySubBig}>Set a name and cover image to start listing products.</Text>
 
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Create my shop"
-            onPress={() => navigation.navigate("CreateShopDetails")}
-            style={[styles.primaryBtn, { backgroundColor: ACCENT }]}
-            activeOpacity={0.9}
-          >
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="Create my shop" onPress={() => navigation.navigate("CreateShopDetails")} style={[styles.primaryBtn, { backgroundColor: ACCENT }]} activeOpacity={0.9}>
             <Ionicons name="add" size={18} color="#0B1220" />
             <Text style={styles.primaryBtnText}>Create shop</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            onPress={() =>
-              Alert.alert(
-                "How it works",
-                "You’ll add a name and cover image now, then list products with photos and prices. You can edit everything later."
-              )
-            }
-            style={styles.textLink}
-            activeOpacity={0.8}
-          >
+          <TouchableOpacity onPress={() => Alert.alert("How it works", "You’ll add a name and cover image now, then list products with photos and prices. You can edit everything later.")} style={styles.textLink} activeOpacity={0.8}>
             <Text style={styles.textLinkLabel}>
               What will I need? <Ionicons name="chevron-forward" size={12} />
             </Text>
@@ -304,9 +242,7 @@ export default function Seller({ navigation }: any) {
 
         <View style={styles.bottomHint}>
           <Ionicons name="shield-checkmark-outline" size={16} color="#6B7280" />
-          <Text style={styles.bottomHintText}>
-            You can change your shop details anytime.
-          </Text>
+          <Text style={styles.bottomHintText}>You can change your shop details anytime.</Text>
         </View>
       </SafeAreaView>
     );
@@ -321,11 +257,7 @@ export default function Seller({ navigation }: any) {
           <Text style={styles.overline}>Seller</Text>
           <Text style={styles.titleLg}>{myShop.name}</Text>
         </View>
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Shop", { shopId: myShop.id })}
-          style={styles.linkPill}
-          activeOpacity={0.9}
-        >
+        <TouchableOpacity onPress={() => navigation.navigate("Shop", { shopId: myShop.id })} style={styles.linkPill} activeOpacity={0.9}>
           <Ionicons name="eye-outline" size={16} color={ACCENT} />
           <Text style={[styles.linkPillText, { color: ACCENT }]}>View</Text>
         </TouchableOpacity>
@@ -336,11 +268,7 @@ export default function Seller({ navigation }: any) {
         <Text style={styles.cardTitle}>Add a product</Text>
 
         {/* Image picker */}
-        <TouchableOpacity
-          onPress={pickImage}
-          style={styles.imagePicker}
-          activeOpacity={0.9}
-        >
+        <TouchableOpacity onPress={pickImage} style={styles.imagePicker} activeOpacity={0.9}>
           {imageUri ? (
             <Image source={{ uri: imageUri }} style={styles.imagePreview} />
           ) : (
@@ -350,62 +278,26 @@ export default function Seller({ navigation }: any) {
             </View>
           )}
         </TouchableOpacity>
-        {errors.image ? (
-          <Text style={styles.errorText}>{errors.image}</Text>
-        ) : null}
+        {errors.image ? <Text style={styles.errorText}>{errors.image}</Text> : null}
 
         {/* Fields */}
         <View style={{ gap: 10, marginTop: 8 }}>
           <View style={styles.inputWrap}>
             <Ionicons name="pricetag-outline" size={16} color="#98A2B3" />
-            <TextInput
-              placeholder="Product name"
-              placeholderTextColor="#98A2B3"
-              value={name}
-              onChangeText={setName}
-              style={styles.input}
-              accessibilityLabel="Product name"
-            />
+            <TextInput placeholder="Product name" placeholderTextColor="#98A2B3" value={name} onChangeText={setName} style={styles.input} accessibilityLabel="Product name" />
           </View>
-          {errors.name ? (
-            <Text style={styles.errorText}>{errors.name}</Text>
-          ) : null}
+          {errors.name ? <Text style={styles.errorText}>{errors.name}</Text> : null}
 
           <View style={styles.inputWrap}>
             <Ionicons name="cash-outline" size={16} color="#98A2B3" />
             <Text style={styles.prefix}>£</Text>
-            <TextInput
-              placeholder="0.00"
-              placeholderTextColor="#98A2B3"
-              value={price}
-              onChangeText={setPrice}
-              keyboardType={Platform.OS === "ios" ? "decimal-pad" : "numeric"}
-              style={styles.input}
-              accessibilityLabel="Price"
-            />
+            <TextInput placeholder="0.00" placeholderTextColor="#98A2B3" value={price} onChangeText={setPrice} keyboardType={Platform.OS === "ios" ? "decimal-pad" : "numeric"} style={styles.input} accessibilityLabel="Price" />
           </View>
-          {errors.price ? (
-            <Text style={styles.errorText}>{errors.price}</Text>
-          ) : null}
+          {errors.price ? <Text style={styles.errorText}>{errors.price}</Text> : null}
 
-          <TouchableOpacity
-            onPress={addProduct}
-            disabled={saving}
-            activeOpacity={0.9}
-            style={[
-              styles.cta,
-              { backgroundColor: ACCENT },
-              (!imageUri || saving) && { opacity: 0.75 },
-            ]}
-          >
-            {saving ? (
-              <ActivityIndicator color="#111" />
-            ) : (
-              <Ionicons name="add" size={18} color="#111" />
-            )}
-            <Text style={[styles.ctaText, { color: "#111" }]}>
-              {saving ? "Adding…" : "Add product"}
-            </Text>
+          <TouchableOpacity onPress={addProduct} disabled={saving} activeOpacity={0.9} style={[styles.cta, { backgroundColor: ACCENT }, (!imageUri || saving) && { opacity: 0.75 }]}>
+            {saving ? <ActivityIndicator color="#111" /> : <Ionicons name="add" size={18} color="#111" />}
+            <Text style={[styles.ctaText, { color: "#111" }]}>{saving ? "Adding…" : "Add product"}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -423,9 +315,7 @@ export default function Seller({ navigation }: any) {
           renderItem={ProductCard}
           ListEmptyComponent={
             <View style={styles.emptyMini}>
-              <Text style={styles.dim}>
-                No products yet—add your first above.
-              </Text>
+              <Text style={styles.dim}>No products yet—add your first above.</Text>
             </View>
           }
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 24 }}
